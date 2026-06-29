@@ -1,0 +1,14 @@
+spring:
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+  flyway:
+    out-of-order: false
+    validate-on-migrate: true
+
+logging:
+  level:
+    root: WARN
+    com.alms: INFO
