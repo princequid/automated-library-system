@@ -1,0 +1,1029 @@
+/* src/admin-portal/styles/components.css
+   Component styles for src/admin-portal/components/common/*. Every selector
+   is scoped under .admin-portal (see tokens.css header) and reaches only for
+   semantic/system tokens - no raw hex here. */
+
+/* ============================== Button ============================== */
+.admin-portal .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast) var(--ease-out), border-color var(--transition-fast) var(--ease-out),
+    color var(--transition-fast) var(--ease-out), transform var(--transition-fast) var(--ease-out);
+  white-space: nowrap;
+}
+.admin-portal .btn:active:not(:disabled) { transform: translateY(1px); }
+.admin-portal .btn:disabled { cursor: not-allowed; opacity: 0.55; }
+
+.admin-portal .btn-md { padding: var(--space-2) var(--space-4); font-size: var(--text-base); }
+.admin-portal .btn-sm { padding: var(--space-1) var(--space-3); font-size: var(--text-sm); }
+.admin-portal .btn-xs { padding: 0.1875rem var(--space-2); font-size: var(--text-xs); }
+.admin-portal .btn-lg { padding: var(--space-3) var(--space-6); font-size: var(--text-md); }
+.admin-portal .btn-icon { padding: var(--space-2); }
+.admin-portal .btn-block { width: 100%; }
+
+/* Solid variants use --btn-fill-* (invariant primitives), NOT --color-primary
+   /-success/-warning/-danger - those semantic tokens shift between themes for
+   use as ACCENT text/icons on a page background, which breaks white-text
+   contrast when used as a button fill (green-400 in dark mode under white
+   text measured ~2.4:1). See tokens.css's --btn-fill-* comment. */
+.admin-portal .btn-primary { background: var(--btn-fill-primary); border-color: var(--btn-fill-primary); color: var(--color-on-brand); }
+.admin-portal .btn-primary:hover:not(:disabled) { background: var(--btn-fill-primary-hover); border-color: var(--btn-fill-primary-hover); }
+.admin-portal .btn-primary:active:not(:disabled) { filter: brightness(0.9); }
+
+.admin-portal .btn-secondary { background: var(--color-primary-soft); border-color: var(--color-primary-border); color: var(--color-primary-hover); }
+.admin-portal .btn-secondary:hover:not(:disabled) { background: var(--color-primary-border); }
+
+.admin-portal .btn-outline { background: transparent; border-color: var(--color-border-strong); color: var(--color-text-1); }
+.admin-portal .btn-outline:hover:not(:disabled) { background: var(--color-surface-hover); }
+
+.admin-portal .btn-ghost { background: transparent; border-color: transparent; color: var(--color-text-2); }
+.admin-portal .btn-ghost:hover:not(:disabled) { background: var(--color-surface-hover); color: var(--color-text-1); }
+
+.admin-portal .btn-success { background: var(--btn-fill-success); border-color: var(--btn-fill-success); color: var(--color-on-brand); }
+.admin-portal .btn-success:hover:not(:disabled) { filter: brightness(1.12); }
+
+.admin-portal .btn-warning { background: var(--btn-fill-warning); border-color: var(--btn-fill-warning); color: var(--color-on-brand); }
+.admin-portal .btn-warning:hover:not(:disabled) { filter: brightness(1.12); }
+
+.admin-portal .btn-danger { background: var(--btn-fill-danger); border-color: var(--btn-fill-danger); color: var(--color-on-brand); }
+.admin-portal .btn-danger:hover:not(:disabled) { filter: brightness(1.12); }
+
+.admin-portal .btn-spinner { animation: admin-spin 0.8s linear infinite; }
+
+@keyframes admin-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================== Badge ============================== */
+.admin-portal .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.1875rem var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.4;
+  border: 1px solid transparent;
+}
+.admin-portal .badge-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+.admin-portal .badge-success { background: var(--color-success-soft); border-color: var(--color-success-border); color: var(--color-success-text); }
+.admin-portal .badge-dot-success { background: var(--color-success); }
+.admin-portal .badge-warning { background: var(--color-warning-soft); border-color: var(--color-warning-border); color: var(--color-warning-text); }
+.admin-portal .badge-dot-warning { background: var(--color-warning); }
+.admin-portal .badge-danger { background: var(--color-danger-soft); border-color: var(--color-danger-border); color: var(--color-danger-text); }
+.admin-portal .badge-dot-danger { background: var(--color-danger); }
+.admin-portal .badge-info { background: var(--color-info-soft); border-color: var(--color-info-border); color: var(--color-info-text); }
+.admin-portal .badge-dot-info { background: var(--color-info); }
+.admin-portal .badge-teal { background: var(--color-teal-soft); border-color: var(--color-teal-border); color: var(--color-teal-text); }
+.admin-portal .badge-dot-teal { background: var(--color-teal); }
+.admin-portal .badge-neutral { background: var(--color-surface-hover); border-color: var(--color-border); color: var(--color-text-2); }
+.admin-portal .badge-dot-neutral { background: var(--color-text-3); }
+
+/* =========================== Severity Meter =========================== */
+/* Deliberately NOT a pill - four ticks in a row, so it can never be mistaken
+   for a Badge even at a glance. */
+.admin-portal .severity-meter {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-2);
+}
+.admin-portal .severity-ticks { display: inline-flex; gap: 3px; }
+.admin-portal .severity-tick {
+  width: 6px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--color-border-strong);
+}
+.admin-portal .severity-low .severity-tick-filled { background: var(--color-info); }
+.admin-portal .severity-moderate .severity-tick-filled { background: var(--color-warning); }
+.admin-portal .severity-high .severity-tick-filled { background: var(--color-danger); }
+.admin-portal .severity-critical .severity-tick-filled { background: var(--color-danger); }
+.admin-portal .severity-critical .severity-label { color: var(--color-danger-text); }
+.admin-portal .severity-label { white-space: nowrap; }
+
+/* ============================== KpiCard ============================== */
+.admin-portal .kpi-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden; /* clips the full-bleed sparkline (KpiCard.jsx) to the rounded corners */
+  /* 3D tilt: --tilt-x/--tilt-y are written straight to the DOM by
+     KpiCard.jsx's mousemove handler (skipped under reduced-motion, see that
+     file), defaulting to flat here so cards outside the current hover stay
+     at 0deg. perspective() as a transform FUNCTION (not the standalone
+     `perspective` property, which only affects a separate child) keeps this
+     self-contained on the card itself - no parent-level setup needed. A
+     short, snappy transition tracks the pointer without visible lag but
+     still eases back to flat on mouseleave; box-shadow gets the slower
+     system transition since a depth cue reads better settling in gradually. */
+  --tilt-x: 0deg;
+  --tilt-y: 0deg;
+  transform: perspective(700px) rotateX(var(--tilt-y)) rotateY(var(--tilt-x)) scale(var(--tilt-scale, 1));
+  transition: transform 150ms var(--ease-out), box-shadow var(--transition-base) var(--ease-out);
+}
+.admin-portal .kpi-card:hover { --tilt-scale: 1.015; box-shadow: var(--shadow-lg); }
+
+.admin-portal .kpi-card-content { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-5); }
+/* Less bottom padding when a sparkline follows - the chart's own bottom
+   margin (below) supplies the visual breathing room instead, so the strip
+   can still sit flush against the card's bottom edge. */
+.admin-portal .kpi-card-has-spark .kpi-card-content { padding-bottom: var(--space-3); }
+
+.admin-portal .kpi-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
+.admin-portal .kpi-card-label {
+  font-size: var(--text-sm);
+  color: var(--color-text-2);
+  font-weight: 500;
+  line-height: 1.4;
+  /* Reserve 2 lines' height always, not just when a label happens to wrap -
+     .kpi-card is a top-aligned flex column, so a label that wraps ("Fines
+     collected this month") otherwise pushes its own value down a full line
+     versus its single-line siblings in the same row, breaking the shared
+     baseline every KPI row depends on for looking like one row, not four
+     unrelated cards. Clamped defensively in case a label is even longer. */
+  min-height: calc(1.4em * 2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.admin-portal .kpi-card-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+.admin-portal .kpi-card-icon-badge-primary { background: var(--color-primary-soft); color: var(--color-primary-hover); }
+.admin-portal .kpi-card-icon-badge-success { background: var(--color-success-soft); color: var(--color-success-text); }
+.admin-portal .kpi-card-icon-badge-warning { background: var(--color-warning-soft); color: var(--color-warning-text); }
+.admin-portal .kpi-card-icon-badge-danger { background: var(--color-danger-soft); color: var(--color-danger-text); }
+.admin-portal .kpi-card-icon-badge-info { background: var(--color-info-soft); color: var(--color-info-text); }
+.admin-portal .kpi-card-icon-badge-teal { background: var(--color-teal-soft); color: var(--color-teal-text); }
+
+.admin-portal .kpi-value {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  color: var(--color-text-1);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.1;
+}
+.admin-portal .kpi-value-empty { font-size: var(--text-lg); color: var(--color-text-3); font-weight: 500; }
+.admin-portal .kpi-unit { font-size: var(--text-md); font-weight: 500; color: var(--color-text-2); margin-left: var(--space-1); }
+
+.admin-portal .kpi-card-meta { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.admin-portal .kpi-card-trend-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0.0625rem var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.admin-portal .kpi-card-trend-pill-positive { background: var(--color-success-soft); color: var(--color-success-text); }
+.admin-portal .kpi-card-trend-pill-negative { background: var(--color-danger-soft); color: var(--color-danger-text); }
+.admin-portal .kpi-card-trend-pill-neutral { background: var(--color-surface-hover); color: var(--color-text-2); }
+.admin-portal .kpi-card-description { font-size: var(--text-xs); color: var(--color-text-2); }
+
+/* margin-top: auto anchors the strip to the card's bottom edge regardless of
+   how much (or little) content sits above it, so every sparkline in a KPI
+   row lines up on the same baseline even when only some cards have one. */
+.admin-portal .kpi-card-sparkline { display: block; width: 100%; margin-top: auto; }
+
+/* ========================== Empty / Error / Loading ========================== */
+.admin-portal .empty-state,
+.admin-portal .error-state,
+.admin-portal .loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--space-2);
+  padding: var(--space-12) var(--space-6);
+  color: var(--color-text-2);
+}
+.admin-portal .empty-state-icon { color: var(--color-text-3); }
+.admin-portal .error-state-icon { color: var(--color-danger-text); }
+.admin-portal .empty-state-title,
+.admin-portal .error-state-title { font-size: var(--text-md); font-weight: 600; color: var(--color-text-1); margin: 0; }
+.admin-portal .empty-state-description,
+.admin-portal .error-state-description { font-size: var(--text-sm); margin: 0; max-width: 32ch; }
+.admin-portal .empty-state-action,
+.admin-portal .error-state-action { margin-top: var(--space-2); }
+.admin-portal .loading-state-spinner { color: var(--color-primary); animation: admin-spin 0.8s linear infinite; }
+.admin-portal .loading-state-label { font-size: var(--text-sm); }
+
+.admin-portal .skeleton-block {
+  display: inline-block;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--color-surface-hover) 25%, var(--color-border) 50%, var(--color-surface-hover) 75%);
+  background-size: 200% 100%;
+  animation: admin-skeleton 1.4s ease-in-out infinite;
+}
+@keyframes admin-skeleton {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ============================== TableCard ============================== */
+.admin-portal .table-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.admin-portal .table-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-5) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+.admin-portal .table-card-title { font-size: var(--text-lg); font-weight: 600; }
+.admin-portal .table-card-description { font-size: var(--text-sm); color: var(--color-text-2); margin: var(--space-1) 0 0; }
+.admin-portal .table-card-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.admin-portal .table-card-filter-narrow { width: 180px; }
+/* DataTable manages its own cell padding and needs to bleed edge-to-edge for
+   its horizontal scroll wrapper, so it opts out via :has() - but charts,
+   lists (top-borrowed, recent-activity) and loading/error content rendered
+   directly here have no padding of their own otherwise, and sat with axis
+   labels/text touching the card's rounded border. */
+.admin-portal .table-card-body { min-width: 0; padding: var(--space-2) var(--space-5) var(--space-5); }
+.admin-portal .table-card-body:has(> .data-table-wrapper) { padding: 0; }
+
+/* ============================== DataTable ============================== */
+.admin-portal .data-table-wrapper { display: flex; flex-direction: column; }
+/* No horizontal scroll, ever - table-layout: fixed forces every column to
+   live inside its share of the card's actual width (from col.width where
+   given, split evenly among the rest), and cell content wraps instead of
+   forcing the table wider. A table that used to need a scrollbar just gets
+   taller rows instead; everything stays visible without scrolling sideways. */
+.admin-portal .data-table-scroll { overflow-x: hidden; }
+.admin-portal .data-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: var(--text-sm); }
+.admin-portal .data-table th {
+  text-align: left;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-2);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+  overflow-wrap: break-word;
+}
+.admin-portal .data-table td {
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-1);
+  vertical-align: middle;
+  overflow-wrap: break-word; /* long unbroken tokens (an ISBN, an email) wrap instead of pushing the column wider */
+}
+.admin-portal .data-table-compact td,
+.admin-portal .data-table-compact th { padding-top: var(--space-2); padding-bottom: var(--space-2); }
+.admin-portal .data-table tbody tr:last-child td { border-bottom: none; }
+.admin-portal .data-table tbody tr:hover td { background: var(--color-surface-hover); }
+.admin-portal .data-table-cell-numeric { text-align: right; font-variant-numeric: tabular-nums; }
+/* Truncation is still opt-in per column (see DataTable.jsx's title=
+   tooltip), but under a fixed layout it only ever clips within that
+   column's own track - it can no longer be the reason a table overflows. */
+.admin-portal .data-table-cell-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-portal .data-table-cell-select { width: 2.5rem; }
+
+.admin-portal .data-table-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: inherit;
+  color: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+.admin-portal .data-table-sort-icons { display: inline-flex; flex-direction: column; gap: 1px; color: var(--color-text-3); }
+.admin-portal .data-table-sort-icons svg { display: block; margin: -3px 0; }
+.admin-portal .data-table-sort-active { color: var(--color-primary); }
+
+.admin-portal .data-table-row-interactive { cursor: pointer; }
+.admin-portal .data-table-row-interactive:focus-visible { outline: none; box-shadow: inset var(--shadow-focus); }
+
+.admin-portal .data-table-row-skeleton td { padding-top: var(--space-3); padding-bottom: var(--space-3); }
+
+/* Card transform below 768px - each <td> becomes a labelled row via its
+   data-label attribute, the <tr> becomes a card. Header row is hidden. */
+@media (max-width: 767px) {
+  .admin-portal .data-table thead { display: none; }
+  .admin-portal .data-table,
+  .admin-portal .data-table tbody,
+  .admin-portal .data-table tr,
+  .admin-portal .data-table td { display: block; width: 100%; }
+  .admin-portal .data-table tbody tr {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    margin: var(--space-3) var(--space-4);
+    padding: var(--space-2) var(--space-4);
+  }
+  .admin-portal .data-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--space-2) 0;
+    text-align: right;
+  }
+  .admin-portal .data-table td:last-child { border-bottom: none; }
+  .admin-portal .data-table td::before {
+    content: attr(data-label);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--color-text-2);
+    text-align: left;
+    flex-shrink: 0;
+  }
+  .admin-portal .data-table-cell-select { display: flex; justify-content: flex-start; }
+  .admin-portal .data-table-cell-select::before { content: 'Select'; }
+  .admin-portal .data-table-cell-truncate { max-width: 60%; }
+}
+
+/* ============================== Loans page ============================== */
+.admin-portal .loan-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: flex-end; }
+.admin-portal .loan-actions-empty { color: var(--color-text-3); }
+.admin-portal .loan-overdue-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-2);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* ============================== Circulation page ============================== */
+.admin-portal .circulation-layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: var(--space-4); align-items: start; }
+.admin-portal .circulation-side-column { display: flex; flex-direction: column; gap: var(--space-4); }
+.admin-portal .circulation-issue-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); }
+/* min-width: 0 - grid items default to min-width: auto, sizing to their
+   widest child's intrinsic content instead of the 1fr track; without it a
+   long child (the borrower SearchBar) pushes this column wider than its
+   fair share and starves the others, which is what squeezed "2. COPY" down
+   to a near-vertical sliver next to it. */
+.admin-portal .circulation-step { display: flex; flex-direction: column; gap: var(--space-2); min-height: 140px; min-width: 0; }
+.admin-portal .circulation-step-label { font-size: var(--text-xs); font-weight: 600; color: var(--color-text-2); text-transform: uppercase; letter-spacing: var(--tracking-caps); }
+.admin-portal .circulation-step-placeholder { font-size: var(--text-sm); color: var(--color-text-3); }
+.admin-portal .circulation-selected-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-primary-soft);
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-primary-hover);
+}
+.admin-portal .circulation-selected-chip button { background: none; border: none; color: inherit; text-decoration: underline; cursor: pointer; font-size: var(--text-xs); font-weight: 500; }
+.admin-portal .circulation-result-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-1); max-height: 200px; overflow-y: auto; }
+.admin-portal .circulation-result-list button {
+  width: 100%;
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-white);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.admin-portal .circulation-result-list button:hover { background: var(--color-surface-hover); }
+.admin-portal .circulation-result-list button.is-selected { border-color: var(--color-primary); background: var(--color-primary-soft); }
+.admin-portal .circulation-result-meta { font-size: var(--text-xs); color: var(--color-text-3); }
+.admin-portal .circulation-no-results { font-size: var(--text-sm); color: var(--color-text-3); margin: 0; }
+.admin-portal .circulation-issue-submit { margin-top: var(--space-5); }
+.admin-portal .circulation-return-form { display: flex; gap: var(--space-3); }
+.admin-portal .circulation-return-input {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-white);
+  font-family: monospace;
+}
+.admin-portal .reshelf-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); max-height: 320px; overflow-y: auto; }
+.admin-portal .reshelf-list-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+.admin-portal .reshelf-location { font-weight: 600; color: var(--color-primary-hover); }
+.admin-portal .reshelf-author { color: var(--color-text-3); font-size: var(--text-xs); grid-column: 2; }
+.admin-portal .reshelf-barcode { font-family: monospace; font-size: var(--text-xs); color: var(--color-text-3); }
+
+@media (max-width: 1023px) {
+  .admin-portal .circulation-layout { grid-template-columns: 1fr; }
+  .admin-portal .circulation-issue-grid { grid-template-columns: 1fr; }
+}
+
+/* ============================== Pagination ============================== */
+.admin-portal .pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+.admin-portal .pagination-summary { font-size: var(--text-sm); color: var(--color-text-2); }
+.admin-portal .pagination-controls { display: flex; align-items: center; gap: var(--space-3); }
+.admin-portal .pagination-page { font-size: var(--text-sm); color: var(--color-text-1); white-space: nowrap; }
+.admin-portal .pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-white);
+  color: var(--color-text-1);
+  cursor: pointer;
+}
+.admin-portal .pagination-btn:hover:not(:disabled) { background: var(--color-surface-hover); }
+.admin-portal .pagination-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ============================== Modal ============================== */
+/* Portalled into #admin-portal-overlay-root, a descendant of .admin-portal
+   (see AppShell.jsx + context/OverlayRootContext.jsx) - NOT document.body -
+   specifically so these selectors and the tokens they reference keep working,
+   dark mode included. */
+.admin-portal .modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.48);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  z-index: 1000;
+}
+.admin-portal .modal {
+  background: var(--color-white);
+  color: var(--color-text-1);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  width: 100%;
+  max-height: calc(100vh - var(--space-8) * 2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.admin-portal .modal-sm { max-width: 420px; }
+.admin-portal .modal-md { max-width: 560px; }
+.admin-portal .modal-lg { max-width: 760px; }
+.admin-portal .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+.admin-portal .modal-title { font-size: var(--text-lg); font-weight: 600; }
+.admin-portal .modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-text-2);
+}
+.admin-portal .modal-close:hover { background: var(--color-surface-hover); color: var(--color-text-1); }
+.admin-portal .modal-body { padding: var(--space-5); overflow-y: auto; }
+.admin-portal .modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--color-border);
+}
+.admin-portal .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+.admin-portal .form-field-span-2 { grid-column: span 2; }
+.admin-portal .modal-footer-lead { margin-right: auto; }
+@media (max-width: 640px) {
+  .admin-portal .form-grid-2 { grid-template-columns: 1fr; }
+  .admin-portal .form-field-span-2 { grid-column: span 1; }
+}
+
+/* ============================== Copies list (CopiesModal) ============================== */
+.admin-portal .copies-add-row { display: flex; align-items: flex-end; gap: var(--space-3); margin-bottom: var(--space-5); }
+.admin-portal .copies-add-row .form-field { flex: 1; max-width: 140px; }
+.admin-portal .copies-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.admin-portal .copies-list-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+.admin-portal .copies-list-barcode { font-family: monospace; font-size: var(--text-xs); color: var(--color-text-2); flex: 1; }
+.admin-portal .copies-list-status-select { width: 160px; }
+
+/* ============================== Member detail (MemberDetailModal) ============================== */
+.admin-portal .member-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-bottom: var(--space-4);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+.admin-portal .member-detail-email { font-size: var(--text-sm); color: var(--color-text-2); margin: 0; }
+.admin-portal .member-detail-meta { font-size: var(--text-xs); color: var(--color-text-3); margin: var(--space-1) 0 0; }
+.admin-portal .member-detail-section { margin-bottom: var(--space-5); }
+.admin-portal .member-detail-heading { font-size: var(--text-sm); font-weight: 600; color: var(--color-text-2); text-transform: uppercase; letter-spacing: var(--tracking-caps); margin: 0 0 var(--space-3); }
+.admin-portal .member-detail-save { margin-top: var(--space-3); }
+/* flex-wrap so the select/reason/button drop to their own lines on narrow
+   viewports instead of forcing horizontal overflow on the whole page - a
+   fixed-width select (below) that refuses to shrink needs somewhere to go
+   once a row this crowded no longer fits one line at mobile widths. */
+.admin-portal .member-status-row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+/* .select-wrapper's own width:100% resolves against this flex row, not the
+   select's content - inside a row with a flex:1 sibling that basis is way
+   oversized, so the flex algorithm shrinks it down, and a native <select>'s
+   min-content width can collapse well below what's needed to show its
+   longest option ("SUSPENDED" was clipping to "AC"). Fixed, not flexible. */
+.admin-portal .member-status-row .select-wrapper { width: 9rem; flex: 0 0 auto; }
+.admin-portal .member-status-reason {
+  flex: 1 1 12rem;
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-white);
+}
+.admin-portal .member-eligibility { font-size: var(--text-sm); margin: 0; padding: var(--space-3); border-radius: var(--radius-sm); }
+.admin-portal .member-eligibility.is-eligible { background: var(--color-success-soft); color: var(--color-success-text); }
+.admin-portal .member-eligibility.is-blocked { background: var(--color-danger-soft); color: var(--color-danger-text); }
+.admin-portal .member-detail-empty { font-size: var(--text-sm); color: var(--color-text-3); margin: 0; }
+.admin-portal .member-mini-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.admin-portal .member-mini-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+.admin-portal .member-fine-amount { font-weight: 600; font-variant-numeric: tabular-nums; }
+.admin-portal .member-created-note { font-size: var(--text-sm); color: var(--color-text-2); margin: 0 0 var(--space-3); }
+.admin-portal .member-created-password {
+  font-family: monospace;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  text-align: center;
+  padding: var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-hover);
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+/* ============================== Fines (FinesCard) ============================== */
+.admin-portal .fine-waive-inline { display: flex; align-items: center; gap: var(--space-2); justify-content: flex-end; }
+.admin-portal .fine-waive-inline-input {
+  width: 140px;
+  padding: 0.1875rem var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-white);
+  font-size: var(--text-xs);
+}
+
+/* ============================== Bulk waive (BulkWaiveModal) ============================== */
+.admin-portal .bulk-waive-note { font-size: var(--text-sm); color: var(--color-text-2); margin: 0 0 var(--space-3); }
+.admin-portal .bulk-waive-reason-input {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-white);
+}
+.admin-portal .bulk-waive-summary { font-size: var(--text-sm); font-weight: 600; padding: var(--space-3); border-radius: var(--radius-sm); margin: 0 0 var(--space-3); }
+.admin-portal .bulk-waive-summary.is-success { background: var(--color-success-soft); color: var(--color-success-text); }
+.admin-portal .bulk-waive-summary.is-partial { background: var(--color-warning-soft); color: var(--color-warning-text); }
+.admin-portal .bulk-waive-progress-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); max-height: 280px; overflow-y: auto; }
+.admin-portal .bulk-waive-progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+}
+.admin-portal .bulk-waive-progress-row.is-success { color: var(--color-success-text); border-color: var(--color-success-border); }
+.admin-portal .bulk-waive-progress-row.is-error { color: var(--color-danger-text); border-color: var(--color-danger-border); }
+.admin-portal .bulk-waive-spinner { animation: admin-spin 0.8s linear infinite; color: var(--color-text-3); }
+.admin-portal .bulk-waive-progress-count { font-size: var(--text-xs); color: var(--color-text-3); margin: var(--space-3) 0 0; text-align: center; }
+
+/* ============================== FormField ============================== */
+.admin-portal .form-field { display: flex; flex-direction: column; gap: var(--space-1); }
+.admin-portal .form-field-label { font-size: var(--text-sm); font-weight: 600; color: var(--color-text-1); }
+.admin-portal .form-field-required { color: var(--color-danger-text); margin-left: 2px; }
+.admin-portal .form-field-hint { font-size: var(--text-xs); color: var(--color-text-3); margin: 0; }
+.admin-portal .form-field-error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--color-danger-text);
+  margin: 0;
+}
+.admin-portal .form-field input,
+.admin-portal .form-field textarea,
+.admin-portal .form-field .select {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-white);
+}
+.admin-portal .form-field-invalid input,
+.admin-portal .form-field-invalid textarea,
+.admin-portal .form-field-invalid .select { border-color: var(--color-danger); }
+
+/* ============================== Select ============================== */
+.admin-portal .select-wrapper { position: relative; display: inline-flex; align-items: center; width: 100%; }
+.admin-portal .select {
+  appearance: none;
+  width: 100%;
+  padding: var(--space-2) var(--space-8) var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-white);
+  color: var(--color-text-1);
+  cursor: pointer;
+}
+.admin-portal .select-chevron {
+  position: absolute;
+  right: var(--space-3);
+  color: var(--color-text-3);
+  pointer-events: none;
+}
+
+/* ============================== Toast ============================== */
+/* Portalled into #admin-portal-overlay-root alongside Modal - see that
+   section's header comment. */
+.admin-portal .toast-viewport {
+  position: fixed;
+  bottom: var(--space-6);
+  right: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  z-index: 1100;
+  max-width: 360px;
+}
+.admin-portal .toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  color: var(--color-text-1);
+  box-shadow: var(--shadow-lg);
+  font-size: var(--text-sm);
+  animation: admin-toast-in var(--transition-base) var(--ease-out);
+}
+.admin-portal .toast-message { flex: 1; }
+.admin-portal .toast-close { background: none; border: none; cursor: pointer; color: inherit; opacity: 0.6; padding: 0; }
+.admin-portal .toast-close:hover { opacity: 1; }
+.admin-portal .toast-success { border-left: 3px solid var(--color-success); }
+.admin-portal .toast-error { border-left: 3px solid var(--color-danger); }
+.admin-portal .toast-info { border-left: 3px solid var(--color-info); }
+@keyframes admin-toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================== SearchBar ============================== */
+.admin-portal .search-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-white);
+  /* min(220px, 100%), not a bare 220px - a fixed min-width overflows any
+     container narrower than that (e.g. the Circulation Issue panel's
+     3-column grid), which forced the sibling column next to it down to
+     almost nothing. This keeps the same 220px floor wherever there's room
+     (TableCard's actions row) while still letting it shrink to fit a
+     genuinely narrow one. */
+  min-width: min(220px, 100%);
+}
+.admin-portal .search-bar-icon { color: var(--color-text-3); flex-shrink: 0; }
+.admin-portal .search-bar-input {
+  border: none;
+  outline: none;
+  background: none;
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-1);
+}
+.admin-portal .search-bar-input::-webkit-search-cancel-button { display: none; }
+.admin-portal .search-bar-clear {
+  background: none;
+  border: none;
+  color: var(--color-text-3);
+  cursor: pointer;
+  display: inline-flex;
+  padding: 0;
+}
+.admin-portal .search-bar-clear:hover { color: var(--color-text-1); }
+
+/* ============================== FilterPills ============================== */
+.admin-portal .filter-pills { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.admin-portal .filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-white);
+  color: var(--color-text-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast) var(--ease-out), color var(--transition-fast) var(--ease-out), border-color var(--transition-fast) var(--ease-out);
+}
+.admin-portal .filter-pill:hover { background: var(--color-surface-hover); }
+.admin-portal .filter-pill.is-active { background: var(--btn-fill-primary); border-color: var(--btn-fill-primary); color: var(--color-on-brand); }
+.admin-portal .filter-pill-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.375rem;
+  height: 1.375rem;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-hover);
+  color: var(--color-text-2);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+.admin-portal .filter-pill.is-active .filter-pill-count { background: rgba(255, 255, 255, 0.24); color: var(--color-on-brand); }
+.admin-portal .filter-results-count { font-size: var(--text-sm); color: var(--color-text-2); margin: 0; }
+/* The search-bar + FilterPills + "N results" stack. On Catalogue/Members/
+   Loans/Staff this sits inside its own TableCard, above the (separate)
+   TableCard holding the DataTable, so it inherits that card's normal body
+   padding for free. Fines is the one page that puts the toolbar and the
+   DataTable in the SAME TableCard (so the bulk "waive selected" button can
+   sit contextually with the table) - and that body's padding is zeroed by
+   the :has(> .data-table-wrapper) rule below so the table can bleed
+   edge-to-edge for its own horizontal-scroll affordance. Without its own
+   padding the toolbar inherited that same zero and sat flush against the
+   card's border. */
+.admin-portal .table-toolbar { display: flex; flex-direction: column; gap: var(--space-4); }
+.admin-portal .table-card-body:has(> .data-table-wrapper) > .table-toolbar {
+  padding: var(--space-4) var(--space-5) 0;
+}
+.admin-portal .fines-toolbar-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
+
+/* ============================== RowActions / KebabMenu ============================== */
+.admin-portal .row-actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-3); }
+.admin-portal .row-actions-view {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-success-text);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+.admin-portal .row-actions-view:hover { text-decoration: underline; }
+.admin-portal .kebab-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: none;
+  color: var(--color-text-3);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.admin-portal .kebab-menu-trigger:hover { background: var(--color-surface-hover); color: var(--color-text-1); }
+/* Reserves the kebab trigger's own footprint when a row has no secondary
+   actions, so "View" lands in the same column position on every row instead
+   of drifting right on rows that happen to lack a menu. */
+.admin-portal .row-actions-spacer { display: inline-block; width: 1.75rem; height: 1.75rem; flex-shrink: 0; }
+/* Portalled into #admin-portal-overlay-root (see Modal/Toast's own comment
+   on why) with fixed positioning computed from the trigger's own bounding
+   rect in KebabMenu.jsx, so it escapes the table's row/cell clipping instead
+   of getting cut off by an ancestor's overflow. */
+.admin-portal .kebab-menu {
+  min-width: 160px;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-2);
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.admin-portal .kebab-menu-item {
+  text-align: left;
+  background: none;
+  border: none;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--color-text-1);
+  cursor: pointer;
+}
+.admin-portal .kebab-menu-item:hover,
+.admin-portal .kebab-menu-item:focus-visible { background: var(--color-surface-hover); }
+.admin-portal .kebab-menu-item-danger { color: var(--color-danger-text); }
+
+/* ============================== Detail pages ============================== */
+/* A dedicated bottom border grounds the back-link/icon/title/actions cluster
+   as one header unit, instead of it reading as loose text floating above
+   the first card - this is what made these pages feel "raw" before. */
+.admin-portal .detail-page-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-bottom: var(--space-5);
+  margin-bottom: var(--space-1);
+  border-bottom: 1px solid var(--color-border);
+}
+.admin-portal .detail-page-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  align-self: flex-start;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-2);
+  text-decoration: none;
+}
+.admin-portal .detail-page-back:hover { color: var(--color-text-1); }
+.admin-portal .detail-page-heading-row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
+.admin-portal .detail-page-heading { display: flex; align-items: center; gap: var(--space-4); }
+.admin-portal .detail-page-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-lg);
+  flex-shrink: 0;
+}
+.admin-portal .detail-page-icon-primary { background: var(--color-primary-soft); color: var(--color-primary-hover); }
+.admin-portal .detail-page-icon-success { background: var(--color-success-soft); color: var(--color-success-text); }
+.admin-portal .detail-page-icon-warning { background: var(--color-warning-soft); color: var(--color-warning-text); }
+.admin-portal .detail-page-icon-danger { background: var(--color-danger-soft); color: var(--color-danger-text); }
+.admin-portal .detail-page-icon-info { background: var(--color-info-soft); color: var(--color-info-text); }
+.admin-portal .detail-page-icon-teal { background: var(--color-teal-soft); color: var(--color-teal-text); }
+.admin-portal .detail-page-title-row { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.admin-portal .detail-page-title { font-size: var(--text-2xl); }
+.admin-portal .detail-page-subtitle { font-size: var(--text-sm); color: var(--color-text-2); margin: var(--space-1) 0 0; }
+.admin-portal .detail-page-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+
+.admin-portal .detail-section { background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: var(--space-5); }
+.admin-portal .detail-section-header { display: flex; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-4); }
+.admin-portal .detail-section-title { font-size: var(--text-md); font-weight: 600; margin: 0; }
+.admin-portal .detail-section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+.admin-portal .detail-section-icon-primary { background: var(--color-primary-soft); color: var(--color-primary-hover); }
+.admin-portal .detail-section-icon-success { background: var(--color-success-soft); color: var(--color-success-text); }
+.admin-portal .detail-section-icon-warning { background: var(--color-warning-soft); color: var(--color-warning-text); }
+.admin-portal .detail-section-icon-danger { background: var(--color-danger-soft); color: var(--color-danger-text); }
+.admin-portal .detail-section-icon-info { background: var(--color-info-soft); color: var(--color-info-text); }
+.admin-portal .detail-section-icon-teal { background: var(--color-teal-soft); color: var(--color-teal-text); }
+.admin-portal .detail-field-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); }
+.admin-portal .detail-field { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+.admin-portal .detail-field-span-2 { grid-column: span 2; }
+/* For DetailSection bodies that hold one rich block (a form, a list, a
+   status row) instead of a set of DetailField label:value pairs - without
+   this, that single child lands in column 1 of the 3-column grid like any
+   other field and stretches to fill that cell's full height, not its
+   content height (this is exactly how a plain "Save" button once rendered
+   as a huge stretched rectangle on the Members detail page). */
+.admin-portal .detail-field-full { grid-column: 1 / -1; }
+.admin-portal .detail-field-label { font-size: var(--text-xs); font-weight: 600; color: var(--color-text-2); text-transform: uppercase; letter-spacing: var(--tracking-caps); }
+.admin-portal .detail-field-value { font-size: var(--text-md); font-weight: 500; color: var(--color-text-1); overflow-wrap: break-word; }
+/* A raw "-" in the same weight/color as real data reads like a rendering
+   glitch, not an intentional "nothing here" - muting it (and dropping the
+   weight back down) makes the absence read as a fact about the record. */
+.admin-portal .detail-field-value-empty { color: var(--color-text-3); font-weight: 400; }
+@media (max-width: 640px) {
+  .admin-portal .detail-field-grid { grid-template-columns: 1fr 1fr; }
+  .admin-portal .detail-field-span-2 { grid-column: span 2; }
+}
+@media (max-width: 420px) {
+  .admin-portal .detail-field-grid { grid-template-columns: 1fr; }
+  .admin-portal .detail-field-span-2 { grid-column: span 1; }
+}
+
+/* ============================== LiveBadge ============================== */
+.admin-portal .live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--color-success-soft);
+  color: var(--color-success-text);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.admin-portal .live-badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-success);
+  animation: admin-live-pulse 2s ease-in-out infinite;
+}
+@keyframes admin-live-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--color-success-soft); }
+  50% { opacity: 0.6; box-shadow: 0 0 0 4px transparent; }
+}
+
+/* ============================== Sparkline ============================== */
+.admin-portal .sparkline { display: block; flex-shrink: 0; }
+
+/* ============================== DueDate ============================== */
+.admin-portal .due-date { font-weight: 500; white-space: nowrap; }
+.admin-portal .due-date-overdue { color: var(--color-danger-text); font-weight: 600; }
+.admin-portal .due-date-today { color: var(--color-warning-text); font-weight: 600; }
+.admin-portal .due-date-soon { color: var(--color-warning-text); }
+.admin-portal .due-date-ok { color: var(--color-text-2); }

@@ -1,0 +1,201 @@
+// backend/prisma/schema.prisma
+// Complete data model for the University Automated Library Management System (ALMS).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STUDENT
+  DESK_STAFF
+  LIBRARIAN
+  SENIOR_LIBRARIAN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  GRADUATED
+  DELETED
+}
+
+enum CopyStatus {
+  AVAILABLE
+  ON_LOAN
+  RESERVED
+  DAMAGED
+  LOST
+  WITHDRAWN
+}
+
+enum ResStatus {
+  WAITING
+  READY
+  COLLECTED
+  EXPIRED
+  CANCELLED
+}
+
+model User {
+  id            String     @id @default(uuid())
+  email         String     @unique
+  student_id    String?    @unique
+  name          String
+  department    String?
+  year_of_study Int?
+  role          UserRole   @default(STUDENT)
+  status        UserStatus @default(ACTIVE)
+  // password_hash is required for ALL roles, including STUDENT.
+  password_hash String
+
+  loans        Loan[]
+  fines        Fine[]
+  reservations Reservation[]
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
+
+  @@index([role])
+  @@index([status])
+  @@index([department])
+  @@map("users")
+}
+
+model CatalogItem {
+  id               String   @id @default(uuid())
+  isbn             String?  @unique
+  title            String
+  author           String
+  publisher        String?
+  year             Int?
+  subject_tags     String[] @default([])
+  abstract         String?
+  shelf_location   String?
+  cover_url        String?
+  available_copies Int      @default(0)
+  total_copies     Int      @default(0)
+  created_by       String?
+
+  copies       Copy[]
+  reservations Reservation[]
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
+
+  @@index([title])
+  @@index([author])
+  @@map("catalog_items")
+}
+
+model Copy {
+  id              String     @id @default(uuid())
+  catalog_item_id String
+  catalog_item    CatalogItem @relation(fields: [catalog_item_id], references: [id], onDelete: Cascade)
+  barcode         String     @unique
+  status          CopyStatus @default(AVAILABLE)
+  condition       String?
+
+  loans Loan[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([catalog_item_id])
+  @@index([status])
+  @@map("copies")
+}
+
+model Loan {
+  id            String    @id @default(uuid())
+  copy_id       String
+  copy          Copy      @relation(fields: [copy_id], references: [id])
+  user_id       String
+  user          User      @relation(fields: [user_id], references: [id])
+  issued_at     DateTime  @default(now())
+  due_date      DateTime
+  returned_at   DateTime?
+  renewal_count Int       @default(0)
+  issued_by     String
+
+  fines Fine[]
+
+  @@index([user_id])
+  @@index([copy_id])
+  @@index([returned_at])
+  @@index([due_date])
+  @@map("loans")
+}
+
+model Reservation {
+  id              String      @id @default(uuid())
+  catalog_item_id String
+  catalog_item    CatalogItem @relation(fields: [catalog_item_id], references: [id], onDelete: Cascade)
+  user_id         String
+  user            User        @relation(fields: [user_id], references: [id])
+  status          ResStatus   @default(WAITING)
+  queue_position  Int
+  ready_at        DateTime?
+  expires_at      DateTime?
+  created_at      DateTime    @default(now())
+
+  @@index([catalog_item_id])
+  @@index([user_id])
+  @@index([status])
+  @@map("reservations")
+}
+
+model Fine {
+  id                String   @id @default(uuid())
+  loan_id           String?
+  loan              Loan?    @relation(fields: [loan_id], references: [id])
+  user_id           String
+  user              User     @relation(fields: [user_id], references: [id])
+  amount            Decimal  @db.Decimal(8, 2)
+  reason            String
+  paid              Boolean  @default(false)
+  paid_at           DateTime?
+  waived            Boolean  @default(false)
+  waived_by         String?
+  payment_reference String?
+  created_at        DateTime @default(now())
+
+  @@index([user_id])
+  @@index([loan_id])
+  @@index([paid])
+  @@map("fines")
+}
+
+model Setting {
+  key         String   @id
+  value       String
+  type        String // 'number' | 'boolean' | 'string'
+  description String
+  updated_by  String?
+  updated_at  DateTime @updatedAt @default(now())
+
+  @@map("settings")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  actor_id    String
+  action      String
+  entity_type String
+  entity_id   String?
+  before      Json?
+  after       Json?
+  created_at  DateTime @default(now())
+
+  @@index([actor_id])
+  @@index([entity_type])
+  @@index([created_at])
+  @@map("audit_logs")
+}

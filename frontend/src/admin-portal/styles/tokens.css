@@ -1,0 +1,399 @@
+/* src/admin-portal/styles/tokens.css
+   Three-layer token architecture (Primitives -> Semantic -> System), matching
+   admin-portal_4's proven pattern on the sibling FleetTrack project.
+
+   SCOPING - read before adding a selector here.
+   This app also serves a Tailwind-based student portal from the same document.
+   Vite code-splits this file with the lazy-loaded admin route, but once loaded
+   it stays in the document (SPA navigation doesn't unload CSS) - so any bare
+   element selector here (`body`, `button`, `input`) would leak into /student/*
+   after a visit to /admin in the same session. Two rules, no exceptions:
+
+     1. Every selector that RESETS or STYLES an element (not just defines a
+        custom property) lives under `.admin-portal { ... }` or a descendant of
+        it. Never write a bare `body`, `button`, `a`, `input` selector.
+     2. Dark mode is scoped to `.admin-portal[data-theme="dark"]`, not
+        `:root[data-theme="dark"]`. The attribute is set on the admin root
+        element (see context/ThemeContext.jsx), never on <html>.
+
+   Token *definitions* (custom properties only, no styling) are safe as :root
+   globals - they're inert until something references them, and nothing
+   outside .admin-portal does. */
+
+/* ===================================================================
+   LAYER 1 - PRIMITIVES. Raw ramps. Components never reference these
+   directly - only the Semantic layer below does.
+   =================================================================== */
+:root {
+  /* Sage green - the library's existing brand, carried forward from the
+     previous admin build. 500/600/700 are the exact hex values already
+     WCAG-AA-verified there; this just extends the ramp around them. */
+  --green-50: #f3faf6;
+  --green-100: #e6f4ec;
+  --green-200: #c8e6d4;
+  --green-300: #a0d2b4;
+  --green-400: #6fb88c;
+  --green-500: #2b7a53;
+  --green-600: #235f42;
+  --green-700: #1c4d36;
+  --green-800: #163d2b;
+  --green-900: #102e20;
+
+  /* Warm gold - the premium accent. Sparingly: active-rail highlight, a
+     rank-1 marker. Never for status - status has its own ramps below. */
+  --gold-300: #f3d688;
+  --gold-400: #e8bd52;
+  --gold-500: #d9a52c;
+  --gold-600: #b8871c;
+
+  /* Neutral ramp - both themes are built from the same ramp, remapped in
+     Layer 2, so light/dark share one perceptual scale instead of two
+     independently-tuned greys that drift apart over time. */
+  --neutral-0: #ffffff;
+  --neutral-50: #f7fafc;
+  --neutral-100: #eef2f6;
+  --neutral-200: #e2e8f0;
+  --neutral-300: #cbd5e1;
+  --neutral-400: #94a3b8;
+  --neutral-500: #64748b;
+  --neutral-600: #475569;
+  --neutral-700: #334155;
+  --neutral-800: #1e293b;
+  --neutral-900: #0f172a;
+  --neutral-950: #0a0f1a;
+
+  /* Status ramps - each ships solid / soft / border / text so a badge or
+     banner never needs a one-off rgba(). The "-text" variant is tuned to sit
+     ON the soft background or a white card as small text; the solid is tuned
+     to sit UNDER white as a fill (e.g. a KPI icon chip). These are different
+     colours on purpose - see the semantic layer's paired tokens below. */
+  --success-500: #2f9e5c;
+  --success-soft: #e6f4ec;
+  --success-border: #a8d9bc;
+  --success-text: #1c6b3f;
+
+  --warning-500: #d97a1f;
+  --warning-soft: #fdf0e0;
+  --warning-border: #f3c78e;
+  --warning-text: #9c5514;
+
+  --danger-500: #d64545;
+  --danger-soft: #fbe9e9;
+  --danger-border: #efb0b0;
+  --danger-text: #a82f2f;
+
+  --info-500: #2f7fd6;
+  --info-soft: #e8f1fc;
+  --info-border: #a9cdf0;
+  --info-text: #1f5a99;
+
+  --teal-500: #2ba69c;
+  --teal-soft: #e2f5f3;
+  --teal-border: #9edcd5;
+  --teal-text: #1c7a72;
+
+  /* Type */
+  --font-display: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ===================================================================
+   LAYER 2 - SEMANTIC. Role-named. Dark mode remaps only this layer, in
+   the one block at the bottom of this section.
+   =================================================================== */
+.admin-portal {
+  /* Brand */
+  --color-primary: var(--green-500);
+  --color-primary-hover: var(--green-600);
+  --color-primary-pressed: var(--green-700);
+  --color-primary-soft: var(--green-100);
+  --color-primary-border: var(--green-200);
+  --color-accent-gold: var(--gold-500);
+
+  /* Solid button fills - deliberately reference PRIMITIVES, not the
+     --color-primary/-success/-warning/-danger semantic tokens, and are
+     absent from the dark-mode block below on purpose so they never change.
+     --color-primary is dark-mode-brightened (green-500 -> green-400) so it
+     reads as an accent against a near-black page; that same brightened
+     value under WHITE button text measured ~2.4:1 - a real failure this
+     token layer is designed to prevent (see TRAP 1/2 elsewhere in this
+     file). The -text primitives (tuned as small text ON a light card) also
+     happen to be exactly the dark, saturated shade a solid fill needs
+     UNDER white - same numbers, opposite job. */
+  --btn-fill-primary: var(--green-600);
+  --btn-fill-primary-hover: var(--green-700);
+  --btn-fill-success: var(--success-text);
+  --btn-fill-warning: var(--warning-text);
+  --btn-fill-danger: var(--danger-text);
+
+  /* Background hierarchy */
+  --color-bg: var(--neutral-50);
+  --color-white: var(--neutral-0); /* SURFACE token - card/panel face. Not a text colour; see the trap below. */
+  --color-surface-hover: var(--neutral-100);
+  --color-surface-selected: var(--green-100);
+
+  /* Sidebar - an always-dark surface in both themes, with its own tokens
+     rather than inheriting page surfaces (which invert between themes and
+     would flip the sidebar to white in light mode otherwise). */
+  --sidebar-bg: var(--neutral-900);
+  --sidebar-hover: var(--neutral-800);
+  --sidebar-text: var(--neutral-300);
+  --sidebar-text-active: var(--neutral-0);
+  --sidebar-border: var(--neutral-800);
+
+  /* Text */
+  --color-text-1: var(--neutral-900); /* primary */
+  --color-text-2: var(--neutral-600); /* secondary */
+  /* muted / hint text - neutral-500, NOT neutral-400. neutral-400 measures
+     2.57:1 against a white card (fails AA's 4.5:1) - it reads fine to a
+     designer's eye against white because eyes adapt, axe's math doesn't.
+     neutral-500 clears it at ~4.76:1 with real margin. */
+  --color-text-3: var(--neutral-500);
+  --color-text-disabled: var(--neutral-300);
+  /* TRAP 1: --color-white above is a SURFACE, not a colour. Using it as TEXT
+     on a fill that does NOT invert between themes (a primary-green button, a
+     teal dot, an avatar chip, the login panel) measured 1.46:1 in dark mode,
+     because dark mode remaps --color-white to a near-black card face. For
+     text sitting on a fill that stays put, use --color-on-brand instead - it
+     is deliberately ABSENT from the dark block below, and must stay that way. */
+  --color-on-brand: #ffffff;
+
+  /* Border */
+  --color-border: var(--neutral-200);
+  --color-border-strong: var(--neutral-300);
+  --color-focus-ring: var(--green-500);
+
+  /* Status - solid/soft/border reused straight from Layer 1; -text below is
+     the semantic name components actually reach for. */
+  --color-success: var(--success-500);
+  --color-success-soft: var(--success-soft);
+  --color-success-border: var(--success-border);
+  --color-success-text: var(--success-text);
+
+  --color-warning: var(--warning-500);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-border: var(--warning-border);
+  --color-warning-text: var(--warning-text);
+
+  --color-danger: var(--danger-500);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-border: var(--danger-border);
+  --color-danger-text: var(--danger-text);
+
+  --color-info: var(--info-500);
+  --color-info-soft: var(--info-soft);
+  --color-info-border: var(--info-border);
+  --color-info-text: var(--info-text);
+
+  --color-teal: var(--teal-500);
+  --color-teal-soft: var(--teal-soft);
+  --color-teal-border: var(--teal-border);
+  --color-teal-text: var(--teal-text);
+  /* TRAP 2: --color-teal is a FILL tuned to sit UNDER white (a solid dot, a
+     chip background) - as small text on a card it only reaches ~3.7:1. For
+     teal TEXT or an icon that must itself be legible, use --color-teal-text.
+     Same split applies to success/warning/danger/info above: the "-text"
+     token, never the solid, for anything you read. */
+
+  /* Elevation - two-part (broad ambient + tight contact) so cards sit ON the
+     page rather than float in a blur. */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 2px 4px rgba(15, 23, 42, 0.04), 0 8px 16px -4px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 4px 8px rgba(15, 23, 42, 0.04), 0 16px 32px -8px rgba(15, 23, 42, 0.12);
+  --shadow-xl: 0 8px 16px rgba(15, 23, 42, 0.06), 0 24px 48px -12px rgba(15, 23, 42, 0.16);
+  --shadow-focus: 0 0 0 3px var(--green-100);
+  /* Fed into DataTable's scroll-shadow gradient (components.css) - a plain
+     rgba() sibling to the shadow scale above, not reused from it, since the
+     scroll-shadow trick needs one bare color rather than a multi-stop shadow. */
+  --scroll-shadow-color: rgba(15, 23, 42, 0.14);
+}
+
+.admin-portal[data-theme='dark'] {
+  --color-primary: var(--green-400); /* the deep navy-equivalent green is too dim on a near-black page */
+  --color-primary-hover: var(--green-300);
+  --color-primary-pressed: var(--green-200);
+  --color-primary-soft: rgba(43, 122, 83, 0.18);
+  --color-primary-border: rgba(43, 122, 83, 0.4);
+
+  --color-bg: var(--neutral-950);
+  --color-white: #151f1a; /* card face - deliberately close to admin-portal_4's #151f33, green-tinted to match this brand */
+  --color-surface-hover: #1c2921;
+  --color-surface-selected: rgba(43, 122, 83, 0.22);
+
+  --sidebar-bg: #0c1410;
+  --sidebar-hover: #16211a;
+  --sidebar-text: var(--neutral-400);
+  --sidebar-text-active: var(--neutral-0);
+  --sidebar-border: #1c2921;
+
+  --color-text-1: var(--neutral-50);
+  --color-text-2: var(--neutral-400);
+  /* neutral-500 (the light-mode value) only reaches ~3.55:1 against this
+     theme's near-black card face - neutral-400 clears 4.5:1 here with
+     margin. Muted text needs the OPPOSITE shift from primary/success/etc:
+     lighter in dark mode, not darker, because it's measured against a dark
+     surface instead of a light one. */
+  --color-text-3: var(--neutral-400);
+  --color-text-disabled: var(--neutral-700);
+  /* --color-on-brand intentionally NOT remapped here - see TRAP 1 above. */
+
+  --color-border: #223026;
+  --color-border-strong: #2c3d31;
+  --color-focus-ring: var(--green-400);
+
+  --color-success-text: #7ad9a0;
+  --color-warning-text: #f0b366;
+  --color-danger-text: #f0a0a0;
+  --color-info-text: #8cbdf0;
+  --color-teal-text: #7fd4c9;
+
+  /* The -soft/-border pair for each status ALSO needs remapping here, same
+     as --color-primary-soft above - without this they silently fall through
+     to their light-mode value (a near-white pastel), which combined with
+     the light -text colours just set above (tuned for a DARK background) is
+     light-on-light: a badge measured ~1.2:1 in dark mode before this block
+     existed. Each is its -500 primitive at low alpha, composited over the
+     dark card face, mirroring the primary token's own pattern exactly. */
+  --color-success-soft: rgba(47, 158, 92, 0.18);
+  --color-success-border: rgba(47, 158, 92, 0.4);
+  --color-warning-soft: rgba(217, 122, 31, 0.18);
+  --color-warning-border: rgba(217, 122, 31, 0.4);
+  --color-danger-soft: rgba(214, 69, 69, 0.18);
+  --color-danger-border: rgba(214, 69, 69, 0.4);
+  --color-info-soft: rgba(47, 127, 214, 0.18);
+  --color-info-border: rgba(47, 127, 214, 0.4);
+  --color-teal-soft: rgba(43, 166, 156, 0.18);
+  --color-teal-border: rgba(43, 166, 156, 0.4);
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.24);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.24), 0 1px 3px rgba(0, 0, 0, 0.32);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.24), 0 8px 16px -4px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.28), 0 16px 32px -8px rgba(0, 0, 0, 0.48);
+  --shadow-xl: 0 8px 16px rgba(0, 0, 0, 0.32), 0 24px 48px -12px rgba(0, 0, 0, 0.56);
+  --shadow-focus: 0 0 0 3px rgba(111, 184, 140, 0.28);
+  --scroll-shadow-color: rgba(0, 0, 0, 0.45);
+}
+
+/* ===================================================================
+   LAYER 3 - SYSTEM. Type scale, spacing, radius, elevation reference,
+   motion, layout. Also scoped under .admin-portal for consistency, though
+   these are inert custom properties like Layer 1/2 and don't strictly need
+   to be - keeping everything in one scope avoids the "which layer is this"
+   question later.
+   =================================================================== */
+.admin-portal {
+  --text-2xs: 0.6875rem;  /* 11px */
+  --text-xs: 0.75rem;     /* 12px */
+  --text-sm: 0.8125rem;   /* 13px */
+  --text-base: 0.875rem;  /* 14px */
+  --text-md: 0.9375rem;   /* 15px */
+  --text-lg: 1.0625rem;   /* 17px */
+  --text-xl: 1.25rem;     /* 20px */
+  --text-2xl: 1.5rem;     /* 24px */
+  --text-3xl: 1.875rem;   /* 30px */
+  --text-4xl: 2.25rem;    /* 36px */
+
+  --tracking-tight: -0.01em;
+  --tracking-caps: 0.06em;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
+
+  --transition-fast: 140ms;
+  --transition-base: 220ms;
+  --transition-slow: 380ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --sidebar-width: 248px;
+  --sidebar-width-collapsed: 72px;
+  --header-height: 64px;
+  --content-max-width: 1440px;
+}
+
+/* ===================================================================
+   BASE - the only element resets in this file, all scoped under
+   .admin-portal per the rule at the top.
+   =================================================================== */
+.admin-portal {
+  font-family: var(--font-sans);
+  color: var(--color-text-1);
+  background: var(--color-bg);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.admin-portal h1,
+.admin-portal h2,
+.admin-portal h3,
+.admin-portal h4,
+.admin-portal h5,
+.admin-portal h6 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text-1);
+  margin: 0;
+}
+
+.admin-portal button,
+.admin-portal input,
+.admin-portal select,
+.admin-portal textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+.admin-portal :focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-sm);
+}
+
+/* Anything that changes over time gets tabular figures so digits don't
+   jitter as they update - KPI values, table numeric cells, the count-up. */
+.admin-portal .kpi-value,
+.admin-portal .stat-value,
+.admin-portal [data-numeric] {
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-portal .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-portal *,
+  .admin-portal *::before,
+  .admin-portal *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

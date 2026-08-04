@@ -1,0 +1,137 @@
+// frontend/src/pages/student/HomePage.tsx
+// Student home: greeting, three stat cards, an eligibility banner if blocked, a
+// "due soon" list of the most urgent loans, and a search CTA for first-timers.
+import { Link } from 'react-router-dom';
+import { BookMarked, Clock, CircleDollarSign, Search, AlertTriangle } from 'lucide-react';
+import { PageTransition } from '@/components/ui/page-transition';
+import { StatCard } from '@/components/ui/stat-card';
+import { SkeletonStat, SkeletonList } from '@/components/ui/skeleton';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { EmptyState, ErrorState } from '@/components/ui/states';
+import { BookCover, DueBadge } from '@/components/shared';
+import { useMe, useMyLoans, useMyReservations, useMyEligibility } from '@/hooks/api';
+import { useAuthStore } from '@/store/auth.store';
+import { greeting, formatGhs } from '@/lib/format';
+
+export function StudentHomePage() {
+  const user = useAuthStore((s) => s.user);
+  const me = useMe();
+  const loans = useMyLoans();
+  const reservations = useMyReservations();
+  const eligibility = useMyEligibility();
+
+  const firstName = user?.name?.split(' ')[0] ?? 'there';
+  const activeLoans = (loans.data ?? []).filter((l) => !l.returned_at);
+  const dueSoon = [...activeLoans]
+    .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
+    .slice(0, 3);
+
+  const loading = me.isLoading || loans.isLoading;
+  const finesTotal = me.data?.outstandingFineTotal ?? 0;
+
+  return (
+    <PageTransition>
+      <div className="mb-6">
+        <h1 className="text-2xl font-medium text-text-primary">
+          {greeting()}, {firstName}
+        </h1>
+        <p className="mt-1 text-sm text-text-secondary">Here's what's happening with your library account.</p>
+      </div>
+
+      {/* Eligibility banner */}
+      {eligibility.data && !eligibility.data.eligible && (
+        <Card className="mb-6 border-warning-bg bg-warning-bg/50 p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-warning-text" />
+            <div>
+              <p className="text-sm font-medium text-warning-text">Borrowing is currently paused</p>
+              <p className="mt-0.5 text-sm text-text-secondary">{eligibility.data.reason}</p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {loading ? (
+          <>
+            <SkeletonStat />
+            <SkeletonStat />
+            <SkeletonStat />
+          </>
+        ) : (
+          <>
+            <StatCard label="Active loans" value={activeLoans.length} icon={<BookMarked className="h-4 w-4" />} />
+            <StatCard
+              label="Reservations"
+              value={(reservations.data ?? []).length}
+              icon={<Clock className="h-4 w-4" />}
+            />
+            <StatCard
+              label="Fines due"
+              value={finesTotal}
+              prefix="GHS "
+              decimals={2}
+              tone={finesTotal > 0 ? 'error' : 'default'}
+              icon={<CircleDollarSign className="h-4 w-4" />}
+            />
+          </>
+        )}
+      </div>
+
+      {/* Due soon */}
+      <div className="mt-8">
+        <h2 className="mb-3 text-sm font-medium text-text-primary">Due soon</h2>
+        {loans.isLoading ? (
+          <SkeletonList rows={3} cols={3} />
+        ) : loans.isError ? (
+          <ErrorState onRetry={() => loans.refetch()} />
+        ) : dueSoon.length === 0 ? (
+          <EmptyState
+            title="No active loans"
+            description="Find your next read in the catalog."
+            icon={<Search className="h-6 w-6" />}
+            action={
+              <Button asChild>
+                <Link to="/student/search">Search the catalog</Link>
+              </Button>
+            }
+          />
+        ) : (
+          <div className="space-y-2">
+            {dueSoon.map((loan) => (
+              <Card key={loan.id} className="flex items-center gap-4 p-3">
+                <div className="h-14 w-10 shrink-0">
+                  <BookCover item={loan.copy!.catalog_item} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-text-primary">
+                    {loan.copy?.catalog_item.title}
+                  </p>
+                  <p className="truncate text-xs text-text-secondary">{loan.copy?.catalog_item.author}</p>
+                </div>
+                <DueBadge dueDate={loan.due_date} />
+              </Card>
+            ))}
+            <div className="pt-1">
+              <Button variant="ghost" asChild>
+                <Link to="/student/loans">View all loans</Link>
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {finesTotal > 0 && (
+        <p className="mt-6 text-sm text-text-secondary">
+          You owe {formatGhs(finesTotal)}.{' '}
+          <Link to="/student/account" className="font-medium text-primary hover:underline">
+            Pay your fines
+          </Link>{' '}
+          to keep borrowing.
+        </p>
+      )}
+    </PageTransition>
+  );
+}

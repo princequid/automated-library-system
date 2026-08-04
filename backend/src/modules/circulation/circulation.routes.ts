@@ -1,0 +1,94 @@
+// backend/src/modules/circulation/circulation.routes.ts
+import { Router } from 'express';
+import { circulationController } from './circulation.controller';
+import { authenticate } from '../../middleware/auth';
+import { requireAtLeast, requireRole } from '../../middleware/rbac';
+import { validateBody, validateQuery } from '../../middleware/validate';
+import { asyncHandler } from '../../shared/asyncHandler';
+import { issueSchema, loansQuery, renewSchema, returnSchema, selfBorrowSchema } from './dto/circulation.dto';
+
+const router = Router();
+router.use(authenticate);
+
+/**
+ * @swagger
+ * /circulation/issue:
+ *   post:
+ *     tags: [Circulation]
+ *     summary: Desk-issue a book to a member (DESK_STAFF+)
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema: { type: object, required: [copy_id, user_id], properties: { copy_id: { type: string }, user_id: { type: string } } }
+ *     responses:
+ *       201: { description: Loan created }
+ *       422: { description: Ineligible or copy unavailable }
+ */
+router.post('/issue', requireAtLeast('DESK_STAFF'), validateBody(issueSchema), asyncHandler(circulationController.issue));
+
+/**
+ * @swagger
+ * /circulation/self-borrow:
+ *   post:
+ *     tags: [Circulation]
+ *     summary: Student self-service borrow (STUDENT). Gated by self_service_borrowing_enabled.
+ *     description: user_id is taken from the authenticated student; it is never read from the body.
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema: { type: object, required: [copy_id], properties: { copy_id: { type: string } } }
+ *     responses:
+ *       201: { description: Borrowed }
+ *       403: { description: Self-service borrowing disabled }
+ *       422: { description: Ineligible or copy unavailable }
+ */
+router.post('/self-borrow', requireRole('STUDENT'), validateBody(selfBorrowSchema), asyncHandler(circulationController.selfBorrow));
+
+/**
+ * @swagger
+ * /circulation/return:
+ *   post:
+ *     tags: [Circulation]
+ *     summary: Return a book by barcode (DESK_STAFF+). Creates an overdue fine if late.
+ *     responses:
+ *       200: { description: Returned; body includes { loan, fine } }
+ *       404: { description: No active loan for barcode }
+ */
+router.post('/return', requireAtLeast('DESK_STAFF'), validateBody(returnSchema), asyncHandler(circulationController.returnBook));
+
+/**
+ * @swagger
+ * /circulation/renew:
+ *   post:
+ *     tags: [Circulation]
+ *     summary: Renew a loan (DESK_STAFF+, or the loan's own STUDENT)
+ *     responses:
+ *       200: { description: Renewed }
+ *       400: { description: Already returned, max renewals reached, or reservation conflict }
+ */
+router.post('/renew', requireAtLeast('STUDENT'), validateBody(renewSchema), asyncHandler(circulationController.renew));
+
+/**
+ * @swagger
+ * /circulation/loans:
+ *   get:
+ *     tags: [Circulation]
+ *     summary: List loans with filters (DESK_STAFF+)
+ *     parameters:
+ *       - { in: query, name: overdue, schema: { type: boolean } }
+ *       - { in: query, name: user_id, schema: { type: string } }
+ *     responses: { 200: { description: Paginated loans } }
+ */
+router.get('/loans', requireAtLeast('DESK_STAFF'), validateQuery(loansQuery), asyncHandler(circulationController.listLoans));
+
+/**
+ * @swagger
+ * /circulation/reshelf:
+ *   get:
+ *     tags: [Circulation]
+ *     summary: Copies returned today, ordered by shelf location (DESK_STAFF+)
+ *     responses: { 200: { description: Reshelf list } }
+ */
+router.get('/reshelf', requireAtLeast('DESK_STAFF'), asyncHandler(circulationController.reshelf));
+
+export const circulationRoutes = router;

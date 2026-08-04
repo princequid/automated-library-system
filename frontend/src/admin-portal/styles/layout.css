@@ -1,0 +1,341 @@
+/* src/admin-portal/styles/layout.css
+   Styles for components/layout/* (AppShell, Sidebar, Navbar, Breadcrumbs,
+   PageHeader) - scoped under .admin-portal per tokens.css's rule. */
+
+.admin-portal .admin-shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+/* ============================== Sidebar ============================== */
+.admin-portal .sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 30;
+}
+.admin-portal .sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-5);
+  border-bottom: 1px solid var(--sidebar-border);
+}
+.admin-portal .sidebar-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-sm);
+  background: var(--btn-fill-primary); /* same white-text-on-fill contrast concern as .btn-primary - see tokens.css */
+  color: var(--color-on-brand);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  flex-shrink: 0;
+}
+.admin-portal .sidebar-brand-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--sidebar-text-active);
+  font-size: var(--text-md);
+}
+.admin-portal .sidebar-close { display: none; margin-left: auto; background: none; border: none; color: var(--sidebar-text); cursor: pointer; }
+
+.admin-portal .sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.admin-portal .sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--sidebar-text);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-decoration: none;
+  transition: background var(--transition-fast) var(--ease-out), color var(--transition-fast) var(--ease-out);
+}
+.admin-portal .sidebar-link:hover { background: var(--sidebar-hover); color: var(--sidebar-text-active); }
+.admin-portal .sidebar-link-active { background: var(--sidebar-hover); color: var(--sidebar-text-active); position: relative; }
+.admin-portal .sidebar-link-active::before {
+  content: '';
+  position: absolute;
+  left: -0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-gold);
+}
+
+.admin-portal .sidebar-footer {
+  border-top: 1px solid var(--sidebar-border);
+  padding: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.admin-portal .sidebar-user { display: flex; align-items: center; gap: var(--space-3); min-width: 0; flex: 1; }
+.admin-portal .sidebar-user-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--btn-fill-primary); /* same white-text-on-fill contrast concern as .btn-primary - see tokens.css */
+  color: var(--color-on-brand);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  flex-shrink: 0;
+}
+.admin-portal .sidebar-user-info { display: flex; flex-direction: column; min-width: 0; }
+.admin-portal .sidebar-user-name {
+  color: var(--sidebar-text-active);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-portal .sidebar-user-role {
+  color: var(--sidebar-text);
+  font-size: var(--text-2xs);
+  text-transform: capitalize;
+}
+.admin-portal .sidebar-logout {
+  background: none;
+  border: none;
+  color: var(--sidebar-text);
+  cursor: pointer;
+  display: inline-flex;
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+.admin-portal .sidebar-logout:hover { background: var(--sidebar-hover); color: var(--sidebar-text-active); }
+
+.admin-portal .sidebar-scrim { display: none; }
+
+/* ============================== Navbar ============================== */
+.admin-portal .admin-shell-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.admin-portal .navbar {
+  height: var(--header-height);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 0 var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-white);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.admin-portal .navbar-menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--color-text-1);
+  cursor: pointer;
+  padding: var(--space-2);
+  margin-left: calc(var(--space-2) * -1);
+}
+.admin-portal .navbar-actions { margin-left: auto; display: flex; align-items: center; gap: var(--space-3); }
+
+.admin-portal .theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-white);
+  color: var(--color-text-2);
+  cursor: pointer;
+}
+.admin-portal .theme-toggle:hover { background: var(--color-surface-hover); color: var(--color-text-1); }
+
+/* ============================== Breadcrumbs ============================== */
+.admin-portal .breadcrumbs ol {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: var(--text-sm);
+}
+.admin-portal .breadcrumbs li { color: var(--color-text-2); display: flex; align-items: center; gap: var(--space-2); }
+.admin-portal .breadcrumbs li:not(:last-child)::after { content: '/'; color: var(--color-text-3); margin-left: var(--space-2); }
+.admin-portal .breadcrumbs a { color: var(--color-text-2); text-decoration: none; }
+.admin-portal .breadcrumbs a:hover { color: var(--color-primary); }
+.admin-portal .breadcrumbs li[aria-current='page'] { color: var(--color-text-1); font-weight: 600; }
+
+/* ============================== Content ============================== */
+.admin-portal .admin-shell-content {
+  flex: 1;
+  padding: var(--space-6);
+  max-width: var(--content-max-width);
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* ============================== PageHeader ============================== */
+.admin-portal .page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+.admin-portal .page-header-title { font-size: var(--text-2xl); }
+.admin-portal .page-header-description { font-size: var(--text-sm); color: var(--color-text-2); margin: var(--space-1) 0 0; }
+.admin-portal .page-header-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+
+/* ============================== KPI strip layout ============================== */
+/* Four equal-width primary KPIs; the secondary strip is visually subordinate
+   (smaller type, muted surface) and must never exceed the primary row's width. */
+.admin-portal .kpi-grid-primary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+}
+.admin-portal .kpi-grid-secondary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-3);
+}
+
+/* ============================== Dashboard ============================== */
+.admin-portal .dashboard-chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); align-items: start; }
+
+/* Custom recharts <Tooltip content> (ChartTooltip.jsx) - replaces the
+   library's plain default box with something that matches the rest of the
+   system (card surface, dot-per-series rows, tabular value). */
+.admin-portal .chart-tooltip {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-3) var(--space-4);
+  min-width: 140px;
+}
+.admin-portal .chart-tooltip-label {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  color: var(--color-text-2);
+  margin-bottom: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+.admin-portal .chart-tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  padding: 2px 0;
+}
+.admin-portal .chart-tooltip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.admin-portal .chart-tooltip-name { color: var(--color-text-2); flex: 1; }
+.admin-portal .chart-tooltip-value { font-weight: 700; color: var(--color-text-1); font-variant-numeric: tabular-nums; }
+.admin-portal .top-borrowed-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.admin-portal .top-borrowed-list li { display: flex; align-items: center; gap: var(--space-3); font-size: var(--text-sm); }
+.admin-portal .top-borrowed-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--color-surface-hover);
+  color: var(--color-text-2);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.admin-portal .top-borrowed-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-portal .top-borrowed-count { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--color-text-2); }
+.admin-portal .recent-activity-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.admin-portal .recent-activity-list li {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+.admin-portal .recent-activity-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.admin-portal .recent-activity-borrower { color: var(--color-text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-portal .recent-activity-status { text-align: right; font-size: var(--text-xs); }
+
+@media (max-width: 1023px) {
+  .admin-portal .dashboard-chart-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 767px) {
+  .admin-portal .recent-activity-list li { grid-template-columns: 1fr; text-align: left; }
+  .admin-portal .recent-activity-status { text-align: left; }
+}
+
+/* ============================== Reports ============================== */
+.admin-portal .reports-date-range { display: flex; align-items: center; gap: var(--space-4); }
+.admin-portal .reports-date-range label { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); color: var(--color-text-2); }
+.admin-portal .reports-date-range input[type='date'] {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-white);
+  font-size: var(--text-sm);
+}
+
+/* ============================== Responsive ============================== */
+@media (max-width: 1023px) {
+  .admin-portal .kpi-grid-primary { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 767px) {
+  .admin-portal .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    transform: translateX(-100%);
+    transition: transform var(--transition-base) var(--ease-out);
+    box-shadow: var(--shadow-xl);
+  }
+  .admin-portal .sidebar-mobile-open { transform: translateX(0); }
+  .admin-portal .sidebar-close { display: inline-flex; }
+  .admin-portal .sidebar-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.48);
+    z-index: 29;
+  }
+  .admin-portal .navbar-menu-btn { display: inline-flex; }
+  .admin-portal .admin-shell-content { padding: var(--space-4); gap: var(--space-4); }
+  .admin-portal .kpi-grid-primary { grid-template-columns: 1fr; }
+}

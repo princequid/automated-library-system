@@ -1,0 +1,8 @@
+/* src/admin-portal/styles/index.css
+   Single entry point for the admin portal's CSS. Import this once, from the
+   admin portal's root (AppShell or its lazy route boundary) - never from
+   main.tsx / App.tsx directly, so it code-splits with the lazy admin route
+   and never loads for the untouched student portal. */
+@import './tokens.css';
+@import './components.css';
+@import './layout.css';

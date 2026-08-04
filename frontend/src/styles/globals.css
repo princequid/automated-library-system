@@ -1,0 +1,164 @@
+/* frontend/src/styles/globals.css
+   The single home for every design token. No hex value should appear anywhere else
+   in the codebase - components reference these custom properties (directly or via
+   the Tailwind token mapping). */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Brand
+     NOTE: primary and text-secondary were darkened slightly from their original
+     values (#2f855a and #718096) to clear WCAG AA 4.5:1 - axe-core flagged both
+     white-on-primary buttons and secondary text on card backgrounds as failing.
+     The hue is unchanged; this is the same sage green/gray, just deep enough to
+     read reliably. */
+  --color-primary: #2b7a53; /* Sage Green - primary buttons, active nav, links */
+  --color-primary-hover: #235f42;
+  --color-primary-pressed: #1c4d36; /* :active/pressed state, one step past hover */
+  --color-primary-tint: #e6f4ec; /* active nav bg, selected rows, success chips */
+  --color-secondary: #38a169; /* Emerald - secondary chart bars/accents */
+  --color-accent: #319795; /* Teal - tertiary highlights */
+
+  /* Full green ramp. 500/600/700 are byte-identical to primary/primary-hover/
+     primary-pressed above (already WCAG-AA verified) - this just fills in the
+     lighter (badges/tints) and darker (future dark-mode/high-emphasis) shades
+     around them. 100 is byte-identical to primary-tint for the same reason. */
+  --green-50: #f3faf6;
+  --green-100: #e6f4ec;
+  --green-200: #c8e6d4;
+  --green-300: #a0d2b4;
+  --green-400: #6fb88c;
+  --green-500: #2b7a53;
+  --green-600: #235f42;
+  --green-700: #1c4d36;
+  --green-800: #163d2b;
+  --green-900: #102e20;
+
+  /* Surfaces */
+  --color-bg: #f7fafc; /* Warm Gray - page background */
+  --color-card: #ffffff;
+  --color-sidebar-bg: #f2f6f4; /* subtle cool-sage tint - sidebar reads as its own surface, not a hard color swap */
+  --color-sidebar-hover: #e9f2ed;
+  --color-hover-surface: #f7fafc; /* = bg. Named alias for the hover:bg-bg pattern used ad hoc everywhere */
+  --color-selected-surface: #e6f4ec; /* = primary-tint. Named alias for selected-row/active-item fills */
+
+  /* Dashboard accent palette - a small, deliberate rotation of hues (not the
+     brand green) for KPI icon badges and multi-series charts (donut/pie slices)
+     where a single green would make everything look the same. Brand green stays
+     in the rotation as one of the hues, not overridden. */
+  --accent-blue: #3b82f6;
+  --accent-blue-bg: #dbeafe;
+  --accent-purple: #8b5cf6;
+  --accent-purple-bg: #ede9fe;
+  --accent-teal: #14b8a6;
+  --accent-teal-bg: #ccfbf1;
+  --accent-orange: #f59e0b;
+  --accent-orange-bg: #fef3c7;
+  --accent-pink: #ec4899;
+  --accent-pink-bg: #fce7f3;
+
+  /* Text */
+  --color-text-primary: #2d3748; /* Dark Slate */
+  /* Darkened once more from #64748b (Checkpoint A) after axe-core caught it
+     failing 4.5:1 against --color-sidebar-bg specifically (4.36:1) - #475569
+     clears card/bg/sidebar all with real margin (~7:1+). */
+  --color-text-secondary: #475569; /* Slate Gray */
+  --color-text-muted: #94a3b8; /* third tier, for de-emphasized/supplementary text only - not guaranteed AA on all surfaces */
+  --color-text-disabled: #cbd5e1;
+  --color-text-inverse: #ffffff; /* text drawn on primary/dark-filled surfaces */
+  --color-border: #e2e8f0; /* Soft Gray hairline - shared by default/card/input/divider uses, deliberately one value */
+  --color-border-strong: #cbd5e1; /* more visible divider, for emphasis contexts */
+
+  /* Status */
+  --color-success: #48bb78;
+  --color-warning: #dd6b20;
+  --color-error: #e53e3e;
+  --color-error-hover: #c53030;
+  --color-info: #3182ce;
+
+  /* Status tint backgrounds + their darkest same-family text + a defined border */
+  --color-success-bg: #e6f4ec;
+  --color-success-text: #276749;
+  --color-success-border: #a8d9bc;
+  --color-warning-bg: #feebdc;
+  --color-warning-text: #9c4221;
+  --color-warning-border: #f6c99a;
+  --color-error-bg: #fdecec;
+  --color-error-text: #c53030;
+  --color-error-border: #f5b5b5;
+  --color-info-bg: #ebf4fc;
+  --color-info-text: #1e5a8c;
+  --color-info-border: #a9d0ee;
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 400;
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Never heavier than 500 anywhere. */
+h1, h2, h3, h4, h5, h6, strong, b {
+  font-weight: 500;
+}
+
+/* Focus ring on every interactive element - primary, 2px, never removed silently. */
+:where(a, button, input, select, textarea, [role='button'], [tabindex]):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Skeleton shimmer sweep. */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-border) 25%,
+    var(--color-bg) 37%,
+    var(--color-border) 63%
+  );
+  background-size: 800px 100%;
+}
+
+/* Respect users who prefer reduced motion - keep the UI legible, drop the movement. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Thin, elegant scrollbars. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 8px;
+}
