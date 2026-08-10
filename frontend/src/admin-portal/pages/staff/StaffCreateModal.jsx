@@ -1,5 +1,5 @@
 // src/admin-portal/pages/staff/StaffCreateModal.jsx
-// This whole page is already SUPER_ADMIN-only (see constants/nav.js), which
+// This whole page is already ADMINISTRATOR-only (see constants/nav.js), which
 // matches POST /users's actual gate exactly - no extra rank check needed
 // here the way MemberCreateModal needs one on a page LIBRARIAN+ can open.
 import { useState } from 'react';
@@ -13,8 +13,8 @@ import { Select } from '../../components/common/Select';
 import { useToast } from '../../components/common/Toast';
 import { focusFirstError } from '../../utils/focusFirstError';
 
-const ROLE_OPTIONS = STAFF_ROLES.map((r) => ({ value: r, label: r.replace('_', ' ') }));
-const EMPTY = { name: '', email: '', role: 'DESK_STAFF', department: '' };
+const ROLE_OPTIONS = STAFF_ROLES.map((r) => ({ value: r, label: r.charAt(0) + r.slice(1).toLowerCase() }));
+const EMPTY = { name: '', email: '', role: 'LIBRARIAN', department: '' };
 
 function validate(values) {
   const errors = {};

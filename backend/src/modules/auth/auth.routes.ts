@@ -23,8 +23,8 @@ router.use(authRateLimit);
  *       Verifies email + bcrypt password against the users table and returns a JWT.
  *       The returned `user.role` determines which interface the frontend renders:
  *       `role === STUDENT` routes to the Student Portal; any other role
- *       (DESK_STAFF/LIBRARIAN/SENIOR_LIBRARIAN/SUPER_ADMIN) routes to the Admin
- *       Portal. This decision is also enforced server-side by RBAC on every
+ *       (LIBRARIAN/ADMINISTRATOR) routes to the Admin Portal. This decision
+ *       is also enforced server-side by RBAC on every
  *       subsequent route. A httpOnly refresh cookie is set on success.
  *     security: []
  *     requestBody:

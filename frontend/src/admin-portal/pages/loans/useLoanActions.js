@@ -10,8 +10,12 @@ export function useLoanActions(loan) {
   const queryClient = useQueryClient();
   const toast = useToast();
 
+  // overrideReason is only ever passed for an ADMINISTRATOR acting outside
+  // the normal Librarian workflow - see requireOverrideIfAdministrator() /
+  // requireLibrarianOrOverride() on the backend.
   const renew = useMutation({
-    mutationFn: () => circulationService.renew({ loan_id: loan.id }),
+    mutationFn: (overrideReason) =>
+      circulationService.renew({ loan_id: loan.id, ...(overrideReason ? { override_reason: overrideReason } : {}) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['circulation', 'loans'] });
       toast.success('Loan renewed.');
@@ -20,7 +24,8 @@ export function useLoanActions(loan) {
   });
 
   const returnLoan = useMutation({
-    mutationFn: () => circulationService.return({ barcode: loan.copy.barcode }),
+    mutationFn: (overrideReason) =>
+      circulationService.return({ barcode: loan.copy.barcode, ...(overrideReason ? { override_reason: overrideReason } : {}) }),
     onSuccess: (envelope) => {
       queryClient.invalidateQueries({ queryKey: ['circulation', 'loans'] });
       toast.success(envelope.data?.fine ? 'Returned - an overdue fine was recorded.' : 'Returned.');

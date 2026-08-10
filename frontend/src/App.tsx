@@ -33,7 +33,12 @@ const AccountPage = lazy(() => import('@/pages/student/AccountPage').then((m) =>
 const AdminAppShell = lazy(() =>
   import('@/admin-portal/components/layout/AppShell').then((m) => ({ default: m.AppShell }))
 );
-const AdminDashboardPage = lazy(() => import('@/admin-portal/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
+const AdminLibrarianDashboardPage = lazy(() =>
+  import('@/admin-portal/pages/LibrarianDashboardPage').then((m) => ({ default: m.LibrarianDashboardPage }))
+);
+const AdminAdministratorDashboardPage = lazy(() =>
+  import('@/admin-portal/pages/AdministratorDashboardPage').then((m) => ({ default: m.AdministratorDashboardPage }))
+);
 const AdminCataloguePage = lazy(() => import('@/admin-portal/pages/CataloguePage').then((m) => ({ default: m.CataloguePage })));
 const AdminMembersPage = lazy(() => import('@/admin-portal/pages/MembersPage').then((m) => ({ default: m.MembersPage })));
 const AdminLoansPage = lazy(() => import('@/admin-portal/pages/LoansPage').then((m) => ({ default: m.LoansPage })));
@@ -43,6 +48,30 @@ const AdminCirculationPage = lazy(() =>
 const AdminOverduesPage = lazy(() => import('@/admin-portal/pages/OverduesPage').then((m) => ({ default: m.OverduesPage })));
 const AdminReportsPage = lazy(() => import('@/admin-portal/pages/ReportsPage').then((m) => ({ default: m.ReportsPage })));
 const AdminStaffPage = lazy(() => import('@/admin-portal/pages/StaffPage').then((m) => ({ default: m.StaffPage })));
+const AdminReservationsPage = lazy(() =>
+  import('@/admin-portal/pages/reservations/ReservationsPage').then((m) => ({ default: m.ReservationsPage }))
+);
+const AdminMaintenancePage = lazy(() =>
+  import('@/admin-portal/pages/maintenance/MaintenancePage').then((m) => ({ default: m.MaintenancePage }))
+);
+const AdminInventoryPage = lazy(() =>
+  import('@/admin-portal/pages/inventory/InventoryPage').then((m) => ({ default: m.InventoryPage }))
+);
+const AdminInventorySessionDetailPage = lazy(() =>
+  import('@/admin-portal/pages/inventory/InventorySessionDetailPage').then((m) => ({ default: m.InventorySessionDetailPage }))
+);
+const AdminAcquisitionsPage = lazy(() =>
+  import('@/admin-portal/pages/acquisitions/AcquisitionsPage').then((m) => ({ default: m.AcquisitionsPage }))
+);
+const AdminCatalogDataPage = lazy(() =>
+  import('@/admin-portal/pages/catalogData/CatalogDataPage').then((m) => ({ default: m.CatalogDataPage }))
+);
+const AdminSettingsPage = lazy(() =>
+  import('@/admin-portal/pages/settings/SettingsPage').then((m) => ({ default: m.SettingsPage }))
+);
+const AdminAuditLogPage = lazy(() =>
+  import('@/admin-portal/pages/auditLog/AuditLogPage').then((m) => ({ default: m.AuditLogPage }))
+);
 
 // Row-detail pages - one per domain, reached by clicking a table row instead
 // of cramming every field into the list's columns (see DetailSection.jsx).
@@ -155,7 +184,15 @@ export default function App() {
               </RouteGuard>
             }
           >
-            <Route index element={<AdminIndexRoute dashboard={<AdminDashboardPage />} />} />
+            <Route
+              index
+              element={
+                <AdminIndexRoute
+                  librarianDashboard={<AdminLibrarianDashboardPage />}
+                  administratorDashboard={<AdminAdministratorDashboardPage />}
+                />
+              }
+            />
             <Route
               path="catalogue"
               element={
@@ -229,6 +266,54 @@ export default function App() {
               }
             />
             <Route
+              path="reservations"
+              element={
+                <AdminRouteGuard minRole={minRoleFor('reservations')}>
+                  <AdminReservationsPage />
+                </AdminRouteGuard>
+              }
+            />
+            <Route
+              path="maintenance"
+              element={
+                <AdminRouteGuard minRole={minRoleFor('maintenance')}>
+                  <AdminMaintenancePage />
+                </AdminRouteGuard>
+              }
+            />
+            <Route
+              path="inventory"
+              element={
+                <AdminRouteGuard minRole={minRoleFor('inventory')}>
+                  <AdminInventoryPage />
+                </AdminRouteGuard>
+              }
+            />
+            <Route
+              path="inventory/:id"
+              element={
+                <AdminRouteGuard minRole={minRoleFor('inventory')}>
+                  <AdminInventorySessionDetailPage />
+                </AdminRouteGuard>
+              }
+            />
+            <Route
+              path="acquisitions"
+              element={
+                <AdminRouteGuard minRole={minRoleFor('acquisitions')}>
+                  <AdminAcquisitionsPage />
+                </AdminRouteGuard>
+              }
+            />
+            <Route
+              path="catalog-data"
+              element={
+                <AdminRouteGuard minRole={minRoleFor('catalog-data')}>
+                  <AdminCatalogDataPage />
+                </AdminRouteGuard>
+              }
+            />
+            <Route
               path="reports"
               element={
                 <AdminRouteGuard minRole={minRoleFor('reports')}>
@@ -249,6 +334,22 @@ export default function App() {
               element={
                 <AdminRouteGuard minRole={minRoleFor('staff')}>
                   <AdminStaffDetailPage />
+                </AdminRouteGuard>
+              }
+            />
+            <Route
+              path="settings"
+              element={
+                <AdminRouteGuard minRole={minRoleFor('settings')}>
+                  <AdminSettingsPage />
+                </AdminRouteGuard>
+              }
+            />
+            <Route
+              path="audit-log"
+              element={
+                <AdminRouteGuard minRole={minRoleFor('audit-log')}>
+                  <AdminAuditLogPage />
                 </AdminRouteGuard>
               }
             />

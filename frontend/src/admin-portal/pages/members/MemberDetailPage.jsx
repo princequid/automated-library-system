@@ -32,7 +32,7 @@ export function MemberDetailPage() {
   const member = useLocation().state?.member;
   const { user } = useAuthStore();
   const canEditProfile = rankAtLeast(user?.role, 'LIBRARIAN');
-  const canChangeStatus = rankAtLeast(user?.role, 'SENIOR_LIBRARIAN');
+  const canChangeStatus = rankAtLeast(user?.role, 'ADMINISTRATOR');
   const queryClient = useQueryClient();
   const toast = useToast();
 
@@ -40,6 +40,7 @@ export function MemberDetailPage() {
     name: member?.name ?? '',
     department: member?.department ?? '',
     year_of_study: member?.year_of_study ?? '',
+    member_level: member?.member_level ?? '',
   }));
   const [statusDraft, setStatusDraft] = useState(member?.status ?? 'ACTIVE');
   const [statusReason, setStatusReason] = useState('');
@@ -66,6 +67,7 @@ export function MemberDetailPage() {
         name: fields.name.trim(),
         department: fields.department.trim() || undefined,
         year_of_study: fields.year_of_study ? Number(fields.year_of_study) : undefined,
+        member_level: fields.member_level || undefined,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -142,6 +144,22 @@ export function MemberDetailPage() {
                   disabled={!canEditProfile}
                   value={fields.year_of_study}
                   onChange={(e) => setFields((f) => ({ ...f, year_of_study: e.target.value }))}
+                />
+              )}
+            </FormField>
+            <FormField label="Level" hint="Drives borrowing policy: loan limit, loan period, renewals, fine rate. Leave unset to infer from year of study.">
+              {(props) => (
+                <Select
+                  {...props}
+                  disabled={!canEditProfile}
+                  placeholder="Infer from year of study"
+                  options={[
+                    { value: 'UNDERGRADUATE', label: 'Undergraduate' },
+                    { value: 'POSTGRADUATE', label: 'Postgraduate' },
+                    { value: 'LECTURER', label: 'Lecturer' },
+                  ]}
+                  value={fields.member_level}
+                  onChange={(e) => setFields((f) => ({ ...f, member_level: e.target.value }))}
                 />
               )}
             </FormField>

@@ -3,7 +3,7 @@
 // and exactly 1 day. Uses the sendEmail stub (logs to console for now).
 import { addDays, startOfDay, endOfDay } from 'date-fns';
 import { prisma } from '../config/database';
-import { sendEmail } from '../shared/email';
+import { notificationsService } from '../modules/notifications/notifications.service';
 import { logger } from '../config/logger';
 
 async function remindForOffset(days: number): Promise<number> {
@@ -15,12 +15,14 @@ async function remindForOffset(days: number): Promise<number> {
 
   for (const loan of loans) {
     const when = days === 1 ? 'tomorrow' : `in ${days} days`;
-    await sendEmail(
-      loan.user.email,
-      `Library reminder: "${loan.copy.catalog_item.title}" is due ${when}`,
-      `Hi ${loan.user.name},\n\nYour loan of "${loan.copy.catalog_item.title}" is due ${when} ` +
-        `(${loan.due_date.toDateString()}). Please return or renew it to avoid a fine.\n\nUniversity Library`
-    );
+    await notificationsService.notify({
+      userId: loan.user_id,
+      type: 'due_soon',
+      title: `"${loan.copy.catalog_item.title}" is due ${when}`,
+      body: `Due ${loan.due_date.toDateString()}. Please return or renew it to avoid a fine.`,
+      entityType: 'Loan',
+      entityId: loan.id,
+    });
   }
   return loans.length;
 }

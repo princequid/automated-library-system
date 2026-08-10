@@ -35,6 +35,27 @@ export const finesController = {
     const student = requireUser(req);
     const result = await finesService.pay(student.id, req.body);
     res.locals.audit = { entityType: 'Fine', after: result };
-    sendSuccess(res, result, 'Payment recorded');
+    sendSuccess(res, result, 'Payment recorded (simulated - no real gateway is connected)');
+  },
+
+  async payManual(req: Request, res: Response): Promise<void> {
+    const staff = requireUser(req);
+    const fine = await finesService.payManual(req.params.id, staff.id);
+    res.locals.audit = { entityType: 'Fine', entityId: req.params.id, after: fine };
+    sendSuccess(res, fine, 'Manual payment recorded');
+  },
+
+  async dispute(req: Request, res: Response): Promise<void> {
+    const student = requireUser(req);
+    const fine = await finesService.dispute(req.params.id, student.id, req.body);
+    res.locals.audit = { entityType: 'Fine', entityId: req.params.id, after: fine };
+    sendSuccess(res, fine, 'Dispute submitted');
+  },
+
+  async resolveDispute(req: Request, res: Response): Promise<void> {
+    const staff = requireUser(req);
+    const fine = await finesService.resolveDispute(req.params.id, req.body.resolution, staff.id, req.body.reason);
+    res.locals.audit = { entityType: 'Fine', entityId: req.params.id, after: fine };
+    sendSuccess(res, fine, 'Dispute resolved');
   },
 };

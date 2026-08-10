@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, Search, BookMarked, User, Menu, X, LogOut } from 'lucide-react';
+import { Home, Search, BookMarked, User, Menu, X, LogOut, Bell } from 'lucide-react';
 import { Wordmark } from '@/components/Brand';
 import { Avatar } from '@/components/ui/avatar';
 import {
@@ -18,7 +18,57 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuthStore } from '@/store/auth.store';
 import { useLogout } from '@/hooks/useAuth';
+import { useMyNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from '@/hooks/api';
 import { cn } from '@/lib/utils';
+
+function NotificationBell() {
+  const notifications = useMyNotifications();
+  const markRead = useMarkNotificationRead();
+  const markAllRead = useMarkAllNotificationsRead();
+  const items = notifications.data ?? [];
+  const unreadCount = items.filter((n) => !n.read_at).length;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger className="relative rounded-control p-2 text-text-secondary hover:bg-bg" aria-label="Notifications">
+        <Bell className="h-5 w-5" />
+        {unreadCount > 0 && (
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-[10px] font-bold text-white">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        )}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-80">
+        <div className="flex items-center justify-between px-2 py-1.5">
+          <DropdownMenuLabel className="p-0">Notifications</DropdownMenuLabel>
+          {unreadCount > 0 && (
+            <button
+              type="button"
+              className="text-xs font-medium text-primary hover:underline"
+              onClick={() => markAllRead.mutate()}
+            >
+              Mark all read
+            </button>
+          )}
+        </div>
+        <DropdownMenuSeparator />
+        {items.length === 0 && <p className="px-2 py-4 text-center text-sm text-text-secondary">No notifications yet.</p>}
+        <div className="max-h-80 overflow-y-auto">
+          {items.map((n) => (
+            <DropdownMenuItem
+              key={n.id}
+              className={cn('flex-col items-start gap-0.5 whitespace-normal py-2', !n.read_at && 'bg-primary/5')}
+              onClick={() => !n.read_at && markRead.mutate(n.id)}
+            >
+              <span className="text-sm font-medium text-text-primary">{n.title}</span>
+              <span className="text-xs text-text-secondary">{n.body}</span>
+            </DropdownMenuItem>
+          ))}
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 const NAV = [
   { to: '/student', label: 'Home', icon: Home, end: true },
@@ -76,6 +126,7 @@ export function StudentLayout() {
           </nav>
 
           <div className="flex items-center gap-2">
+            <NotificationBell />
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-2 rounded-full p-0.5 hover:bg-bg">
                 <Avatar name={user?.name ?? 'U'} />

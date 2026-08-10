@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { catalogController } from './catalog.controller';
 import { authenticate } from '../../middleware/auth';
-import { requireAtLeast } from '../../middleware/rbac';
+import { requireAtLeast, requireLibrarianOrOverride } from '../../middleware/rbac';
 import { validateBody, validateQuery } from '../../middleware/validate';
 import { asyncHandler } from '../../shared/asyncHandler';
 import { upload } from '../../shared/upload';
@@ -83,15 +83,15 @@ router.post('/bulk-import', requireAtLeast('LIBRARIAN'), upload.single('file'), 
  *     responses: { 200: { description: Updated } }
  *   delete:
  *     tags: [Catalog]
- *     summary: Soft-delete an item (SENIOR_LIBRARIAN+); blocked if any copy is on loan
+ *     summary: Soft-delete an item. LIBRARIAN is blocked if any copy is on loan ("Limited"); ADMINISTRATOR force-deletes via override_reason ("Full").
  *     parameters: [{ in: path, name: id, required: true, schema: { type: string } }]
  *     responses:
  *       200: { description: Deleted }
- *       400: { description: A copy is on loan }
+ *       400: { description: A copy is on loan, or Administrator override missing override_reason }
  */
 router.get('/items/:id', asyncHandler(catalogController.getOne));
 router.put('/items/:id', requireAtLeast('LIBRARIAN'), validateBody(updateCatalogSchema), asyncHandler(catalogController.update));
-router.delete('/items/:id', requireAtLeast('SENIOR_LIBRARIAN'), asyncHandler(catalogController.remove));
+router.delete('/items/:id', requireLibrarianOrOverride(), asyncHandler(catalogController.remove));
 
 /**
  * @swagger
@@ -120,5 +120,16 @@ router.post('/items/:id/copies', requireAtLeast('LIBRARIAN'), validateBody(addCo
  *     responses: { 200: { description: Copy updated } }
  */
 router.put('/copies/:id', requireAtLeast('LIBRARIAN'), validateBody(updateCopySchema), asyncHandler(catalogController.updateCopy));
+
+/**
+ * @swagger
+ * /catalog/copies/{id}/qrcode:
+ *   get:
+ *     tags: [Catalog]
+ *     summary: A printable QR code (PNG) encoding the copy's barcode (LIBRARIAN+)
+ *     parameters: [{ in: path, name: id, required: true, schema: { type: string } }]
+ *     responses: { 200: { description: image/png } }
+ */
+router.get('/copies/:id/qrcode', requireAtLeast('LIBRARIAN'), asyncHandler(catalogController.copyQrCode));
 
 export const catalogRoutes = router;

@@ -5,6 +5,7 @@ import { addDays } from 'date-fns';
 import { prisma } from '../../config/database';
 import { settingsService } from '../settings/settings.service';
 import { checkEligibility } from '../users/eligibility';
+import { notificationsService } from '../notifications/notifications.service';
 import { AppError } from '../../shared/appError';
 
 const reservationInclude = {
@@ -31,17 +32,30 @@ export async function promoteQueue(catalogItemId: string): Promise<void> {
 
   const deadlineDays = await settingsService.getNumber('hold_pickup_deadline_days');
   const now = new Date();
+  const expiresAt = addDays(now, deadlineDays);
 
   await prisma.$transaction(async (tx) => {
     await tx.reservation.update({
       where: { id: next.id },
-      data: { status: 'READY', ready_at: now, expires_at: addDays(now, deadlineDays) },
+      data: { status: 'READY', ready_at: now, expires_at: expiresAt },
     });
     await tx.copy.update({ where: { id: availableCopy.id }, data: { status: 'RESERVED' } });
     await tx.catalogItem.update({
       where: { id: catalogItemId },
       data: { available_copies: { decrement: 1 } },
     });
+  });
+
+  // The exact "reservation ready" gap the checklist audit flagged - previously
+  // a student only found out by checking the app themselves.
+  const item = await prisma.catalogItem.findUnique({ where: { id: catalogItemId }, select: { title: true } });
+  await notificationsService.notify({
+    userId: next.user_id,
+    type: 'hold_ready',
+    title: `"${item?.title ?? 'Your reservation'}" is ready for pickup`,
+    body: `Pick it up by ${expiresAt.toDateString()} or the hold expires and passes to the next member in line.`,
+    entityType: 'Reservation',
+    entityId: next.id,
   });
 }
 
@@ -96,8 +110,11 @@ class ReservationsService {
     const reservation = await prisma.reservation.findUnique({ where: { id: reservationId } });
     if (!reservation) throw new AppError('Reservation not found', 404);
 
+    // Reservation management is a Librarian operation the spec gives
+    // Administrator view-only access to (no override path) - only the owning
+    // student or a LIBRARIAN may cancel.
     const isOwner = reservation.user_id === requester.id;
-    const isStaff = ['LIBRARIAN', 'SENIOR_LIBRARIAN', 'SUPER_ADMIN'].includes(requester.role);
+    const isStaff = requester.role === 'LIBRARIAN';
     if (!isOwner && !isStaff) throw new AppError('You cannot cancel this reservation', 403);
 
     await prisma.$transaction(async (tx) => {

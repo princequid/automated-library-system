@@ -12,6 +12,8 @@ import { updateAvailableCopies } from '../catalog/catalog.service';
 import { promoteQueue } from '../reservations/reservations.service';
 import { AppError } from '../../shared/appError';
 import { buildMeta } from '../../shared/responseHelper';
+import { resolveMemberLevel } from '../../shared/memberLevel';
+import { notificationsService } from '../notifications/notifications.service';
 import { LoansQuery } from './dto/circulation.dto';
 
 const loanInclude = {
@@ -30,11 +32,16 @@ class CirculationService {
 
     const copy = await prisma.copy.findUnique({ where: { id: copyId } });
     if (!copy) throw new AppError('Copy not found', 404);
-    if (copy.status !== 'AVAILABLE') {
+    // RESERVED is allowed here too - it's exactly how a librarian issues a
+    // held copy to the student it was held for (see the auto-collect check
+    // right below, which requires the copy to already be RESERVED for them).
+    if (copy.status !== 'AVAILABLE' && copy.status !== 'RESERVED') {
       throw new AppError('This copy is not available for loan', 422);
     }
 
-    const loanPeriodDays = await settingsService.getNumber('loan_period_days');
+    const userForLevel = await prisma.user.findUnique({ where: { id: userId } });
+    const level = resolveMemberLevel(userForLevel!);
+    const loanPeriodDays = await settingsService.getNumber(`loan_period_days_${level}`);
     const dueDate = addDays(new Date(), loanPeriodDays);
 
     const loan = await prisma.$transaction(async (tx) => {
@@ -44,6 +51,16 @@ class CirculationService {
       await tx.copy.update({ where: { id: copyId }, data: { status: 'ON_LOAN' } });
       return created;
     });
+
+    // If this copy was RESERVED and ready for this exact user, issuing it now
+    // closes the loop the checklist audit flagged: the reservation used to sit
+    // at READY forever (the COLLECTED status was defined but never used).
+    const readyHold = await prisma.reservation.findFirst({
+      where: { catalog_item_id: copy.catalog_item_id, user_id: userId, status: 'READY' },
+    });
+    if (readyHold) {
+      await prisma.reservation.update({ where: { id: readyHold.id }, data: { status: 'COLLECTED' } });
+    }
 
     await updateAvailableCopies(copy.catalog_item_id);
 
@@ -87,7 +104,7 @@ class CirculationService {
     // Overdue fine, capped, based on the borrower's level.
     if (now > loan.due_date) {
       const daysOverdue = differenceInCalendarDays(now, loan.due_date);
-      const level = (loan.user.year_of_study ?? 0) >= 5 ? 'postgraduate' : 'undergraduate';
+      const level = resolveMemberLevel(loan.user);
       const rate = await settingsService.getNumber(`fine_rate_${level}`);
       const cap = await settingsService.getNumber('fine_max_cap_ghs');
       const amount = Math.min(daysOverdue * rate, cap);
@@ -99,6 +116,14 @@ class CirculationService {
             amount: new Prisma.Decimal(amount.toFixed(2)),
             reason: `${daysOverdue} day(s) overdue`,
           },
+        });
+        await notificationsService.notify({
+          userId: loan.user_id,
+          type: 'fine_created',
+          title: 'A fine was posted to your account',
+          body: `GHS ${amount.toFixed(2)} for ${daysOverdue} day(s) overdue.`,
+          entityType: 'Fine',
+          entityId: fine.id,
         });
       }
     }
@@ -114,7 +139,7 @@ class CirculationService {
   async renew(loanId: string, requester: { id: string; role: string }) {
     const loan = await prisma.loan.findUnique({
       where: { id: loanId },
-      include: { copy: true },
+      include: { copy: true, user: true },
     });
     if (!loan) throw new AppError('Loan not found', 404);
 
@@ -124,7 +149,8 @@ class CirculationService {
     }
     if (loan.returned_at) throw new AppError('This loan has already been returned', 400);
 
-    const maxRenewals = await settingsService.getNumber('max_renewals');
+    const level = resolveMemberLevel(loan.user);
+    const maxRenewals = await settingsService.getNumber(`max_renewals_${level}`);
     if (loan.renewal_count >= maxRenewals) {
       throw new AppError(`Maximum renewals reached (${maxRenewals})`, 400);
     }
@@ -137,7 +163,7 @@ class CirculationService {
       throw new AppError('Cannot renew: another member has reserved this title', 400);
     }
 
-    const loanPeriodDays = await settingsService.getNumber('loan_period_days');
+    const loanPeriodDays = await settingsService.getNumber(`loan_period_days_${level}`);
     const updated = await prisma.loan.update({
       where: { id: loanId },
       data: { due_date: addDays(loan.due_date, loanPeriodDays), renewal_count: { increment: 1 } },

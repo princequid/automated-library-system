@@ -29,7 +29,14 @@
 import * as lib from './library-data.js';
 
 // Everything this file handles - explicitly NOT auth, which belongs to auth.js.
-const RESOURCE_PATTERN = '**/api/v1/{catalog,users,circulation,fines,analytics}/**';
+// Every new module added in the checklist-gap-closure pass is included here
+// too (notifications especially - NotificationBell polls on a refetchInterval
+// from every admin page's Navbar, so leaving it unstubbed meant EVERY test in
+// the suite silently leaked a real network request; with enough parallel
+// tests that's exactly how it once rate-limited a real local backend and took
+// an unrelated student-portal e2e test down with it).
+const RESOURCE_PATTERN =
+  '**/api/v1/{catalog,users,circulation,fines,analytics,notifications,maintenance,inventory,acquisitions,authors,publishers,categories,locations,audit-logs,settings}/**';
 
 function envelope(data, meta) {
   return { success: true, data, message: 'OK', ...(meta ? { meta } : {}) };

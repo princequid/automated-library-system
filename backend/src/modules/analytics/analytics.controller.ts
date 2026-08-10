@@ -29,4 +29,10 @@ export const analyticsController = {
   async recentActivity(_req: Request, res: Response): Promise<void> {
     sendSuccess(res, await analyticsService.recentActivity(), 'Recent activity');
   },
+  async staffActivity(req: Request, res: Response): Promise<void> {
+    sendSuccess(res, await analyticsService.staffActivity(range(req)), 'Staff activity');
+  },
+  async acquisitionExpenditure(_req: Request, res: Response): Promise<void> {
+    sendSuccess(res, await analyticsService.acquisitionExpenditure(), 'Acquisition expenditure');
+  },
 };

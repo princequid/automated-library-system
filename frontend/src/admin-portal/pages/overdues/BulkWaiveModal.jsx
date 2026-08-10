@@ -5,6 +5,7 @@
 // single success/fail toast that would misrepresent what actually happened.
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '@/store/auth.store';
 import { apiErrorMessage } from '@/lib/api';
 import { finesService } from '../../services/finesService';
 import { Modal } from '../../components/common/Modal';
@@ -17,6 +18,8 @@ export function BulkWaiveModal({ open, onClose, fines }) {
   const [results, setResults] = useState({}); // { [fineId]: 'pending' | 'success' | 'error' }
   const [done, setDone] = useState(false);
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+  const isAdministrator = user?.role === 'ADMINISTRATOR';
 
   const completedCount = Object.values(results).filter((r) => r !== 'pending').length;
   const failed = Object.entries(results).filter(([, v]) => v === 'error');
@@ -29,7 +32,10 @@ export function BulkWaiveModal({ open, onClose, fines }) {
 
     for (const fine of fines) {
       try {
-        await finesService.waiveOne(fine.id, { reason: reason.trim() });
+        await finesService.waiveOne(fine.id, {
+          reason: reason.trim(),
+          ...(isAdministrator ? { override_reason: reason.trim() } : {}),
+        });
         setResults((prev) => ({ ...prev, [fine.id]: 'success' }));
       } catch (err) {
         setResults((prev) => ({ ...prev, [fine.id]: 'error' }));
@@ -77,6 +83,7 @@ export function BulkWaiveModal({ open, onClose, fines }) {
           <p className="bulk-waive-note">
             This sends {fines.length} separate request{fines.length === 1 ? '' : 's'} - one per fine. The same reason is
             recorded on each.
+            {isAdministrator && ' This is normally a Librarian action; as an Administrator each one is recorded as an override.'}
           </p>
           <input
             type="text"

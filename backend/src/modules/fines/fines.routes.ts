@@ -2,10 +2,17 @@
 import { Router } from 'express';
 import { finesController } from './fines.controller';
 import { authenticate } from '../../middleware/auth';
-import { requireAtLeast, requireRole } from '../../middleware/rbac';
+import { requireAtLeast, requireLibrarianOrOverride, requireRole } from '../../middleware/rbac';
 import { validateBody, validateQuery } from '../../middleware/validate';
 import { asyncHandler } from '../../shared/asyncHandler';
-import { createFineSchema, listFinesQuery, payFinesSchema, waiveFineSchema } from './dto/fine.dto';
+import {
+  createFineSchema,
+  disputeFineSchema,
+  listFinesQuery,
+  payFinesSchema,
+  resolveDisputeSchema,
+  waiveFineSchema,
+} from './dto/fine.dto';
 
 const router = Router();
 router.use(authenticate);
@@ -46,23 +53,58 @@ router.post('/pay', requireRole('STUDENT'), validateBody(payFinesSchema), asyncH
  *     responses: { 200: { description: Fines } }
  *   post:
  *     tags: [Fines]
- *     summary: Manually create a fine, e.g. damaged/lost book (LIBRARIAN+)
+ *     summary: Manually create a fine, e.g. damaged/lost book (LIBRARIAN normal; ADMINISTRATOR override only, requires override_reason)
  *     responses: { 201: { description: Created } }
  */
 router.get('/', requireAtLeast('LIBRARIAN'), validateQuery(listFinesQuery), asyncHandler(finesController.list));
-router.post('/', requireAtLeast('LIBRARIAN'), validateBody(createFineSchema), asyncHandler(finesController.create));
+router.post('/', requireLibrarianOrOverride(), validateBody(createFineSchema), asyncHandler(finesController.create));
 
 /**
  * @swagger
  * /fines/{id}/waive:
  *   put:
  *     tags: [Fines]
- *     summary: Waive a fine with a required reason (SENIOR_LIBRARIAN+)
+ *     summary: Waive a fine with a required reason (LIBRARIAN normal; ADMINISTRATOR override only, also requires override_reason)
  *     parameters: [{ in: path, name: id, required: true, schema: { type: string } }]
  *     responses:
  *       200: { description: Waived }
  *       422: { description: Reason missing }
  */
-router.put('/:id/waive', requireAtLeast('SENIOR_LIBRARIAN'), validateBody(waiveFineSchema), asyncHandler(finesController.waive));
+router.put('/:id/waive', requireLibrarianOrOverride(), validateBody(waiveFineSchema), asyncHandler(finesController.waive));
+
+/**
+ * @swagger
+ * /fines/{id}/dispute:
+ *   post:
+ *     tags: [Fines]
+ *     summary: Dispute one of your own unresolved fines (STUDENT)
+ *     responses: { 200: { description: Dispute submitted } }
+ */
+router.post('/:id/dispute', requireRole('STUDENT'), validateBody(disputeFineSchema), asyncHandler(finesController.dispute));
+
+/**
+ * @swagger
+ * /fines/{id}/resolve-dispute:
+ *   put:
+ *     tags: [Fines]
+ *     summary: Resolve a disputed fine - waive it, or reject the dispute (LIBRARIAN normal; ADMINISTRATOR override only, requires override_reason)
+ *     responses: { 200: { description: Dispute resolved } }
+ */
+router.put(
+  '/:id/resolve-dispute',
+  requireLibrarianOrOverride(),
+  validateBody(resolveDisputeSchema),
+  asyncHandler(finesController.resolveDispute)
+);
+
+/**
+ * @swagger
+ * /fines/{id}/pay-manual:
+ *   post:
+ *     tags: [Fines]
+ *     summary: Record a cash/offline payment on a student's behalf (LIBRARIAN normal; ADMINISTRATOR override only, requires override_reason)
+ *     responses: { 200: { description: Manual payment recorded } }
+ */
+router.post('/:id/pay-manual', requireLibrarianOrOverride(), asyncHandler(finesController.payManual));
 
 export const finesRoutes = router;

@@ -6,10 +6,29 @@ import { useLogout } from '@/hooks/useAuth';
 import { NAV_ITEMS } from '../../constants/nav';
 import { LogoutIcon, CloseIcon } from '../common/Icons';
 
+// Grouped by NAV_ITEMS' `section` field (in first-seen order) rather than one
+// flat list - a Librarian and an Administrator looking at the same sidebar
+// should still see it organized around different concerns ("Library
+// Operations" vs "Administration"), not just a longer/shorter version of one
+// list. See constants/nav.js's header comment for the exact per-item gating.
+function groupBySection(items) {
+  const groups = [];
+  for (const item of items) {
+    let group = groups.find((g) => g.section === item.section);
+    if (!group) {
+      group = { section: item.section, items: [] };
+      groups.push(group);
+    }
+    group.items.push(item);
+  }
+  return groups;
+}
+
 export function Sidebar({ mobileOpen, onCloseMobile }) {
   const { user } = useAuthStore();
   const { mutate: logout } = useLogout();
   const visibleItems = NAV_ITEMS.filter((item) => rankAtLeast(user?.role, item.minRole));
+  const groups = groupBySection(visibleItems);
 
   return (
     <>
@@ -26,21 +45,26 @@ export function Sidebar({ mobileOpen, onCloseMobile }) {
         </div>
 
         <nav className="sidebar-nav" aria-label="Admin navigation">
-          {visibleItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.key}
-                to={item.path}
-                end={item.end}
-                className={({ isActive }) => `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`.trim()}
-                onClick={onCloseMobile}
-              >
-                <Icon size={18} />
-                <span>{item.label}</span>
-              </NavLink>
-            );
-          })}
+          {groups.map((group) => (
+            <div key={group.section} className="sidebar-section">
+              {group.section && <span className="sidebar-section-label">{group.section}</span>}
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <NavLink
+                    key={item.key}
+                    to={item.path}
+                    end={item.end}
+                    className={({ isActive }) => `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`.trim()}
+                    onClick={onCloseMobile}
+                  >
+                    <Icon size={18} />
+                    <span>{item.label}</span>
+                  </NavLink>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
         <div className="sidebar-footer">
@@ -50,7 +74,7 @@ export function Sidebar({ mobileOpen, onCloseMobile }) {
             </span>
             <div className="sidebar-user-info">
               <span className="sidebar-user-name">{user?.name}</span>
-              <span className="sidebar-user-role">{isAdminRole(user?.role) ? user?.role?.replace('_', ' ') : ''}</span>
+              <span className="sidebar-user-role">{isAdminRole(user?.role) ? user?.role : ''}</span>
             </div>
           </div>
           <button type="button" className="sidebar-logout" onClick={logout} aria-label="Log out">

@@ -4,7 +4,7 @@
 // frontend never reads or writes it.
 import { create } from 'zustand';
 
-export type UserRole = 'STUDENT' | 'DESK_STAFF' | 'LIBRARIAN' | 'SENIOR_LIBRARIAN' | 'SUPER_ADMIN';
+export type UserRole = 'STUDENT' | 'LIBRARIAN' | 'ADMINISTRATOR';
 
 export interface AuthUser {
   id: string;
@@ -35,7 +35,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   setUser: (user) => set({ user, isAuthenticated: true }),
 }));
 
-/** True for any staff role (everyone who is NOT a student). */
+/**
+ * True for any staff role (LIBRARIAN or ADMINISTRATOR) - decides Student Portal
+ * vs the shared staff shell at /admin. It is NOT an RBAC check: within the staff
+ * shell, LIBRARIAN and ADMINISTRATOR see different dashboards/nav/permissions -
+ * see AdminIndexRoute and constants/nav.js.
+ */
 export function isAdminRole(role: UserRole | undefined | null): boolean {
   return !!role && role !== 'STUDENT';
 }

@@ -1,20 +1,12 @@
 // src/admin-portal/components/layout/AdminIndexRoute.jsx
-// The index route (/admin) is the Dashboard for LIBRARIAN+, but Dashboard's
-// analytics.* endpoints all 403 below that rank (see constants/nav.js) - a
-// DESK_STAFF landing here would hit an ErrorState on every login. Send them
-// to the first surface NAV_ITEMS says they can actually reach instead.
-import { Navigate } from 'react-router-dom';
+// The index route (/admin) renders a genuinely different dashboard component
+// per exact role - LIBRARIAN gets LibrarianDashboardPage ("Today's Library
+// Operations"), ADMINISTRATOR gets AdministratorDashboardPage ("System &
+// Library Oversight"). This is a role switch, not a rank cutoff - the two
+// are deliberately different tools, not one dashboard with extra widgets.
 import { useAuthStore } from '@/store/auth.store';
-import { rankAtLeast } from '@/lib/roles';
-import { NAV_ITEMS } from '../../constants/nav';
 
-export function AdminIndexRoute({ dashboard }) {
+export function AdminIndexRoute({ librarianDashboard, administratorDashboard }) {
   const { user } = useAuthStore();
-
-  if (rankAtLeast(user?.role, 'LIBRARIAN')) {
-    return dashboard;
-  }
-
-  const firstAvailable = NAV_ITEMS.find((item) => item.key !== 'dashboard' && rankAtLeast(user?.role, item.minRole));
-  return <Navigate to={firstAvailable?.path ?? '/admin'} replace />;
+  return user?.role === 'ADMINISTRATOR' ? administratorDashboard : librarianDashboard;
 }

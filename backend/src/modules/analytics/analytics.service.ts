@@ -141,6 +141,55 @@ class AnalyticsService {
       },
     });
   }
+
+  /**
+   * Administrator-only oversight: action counts per staff member (Librarian and
+   * Administrator alike), including how many were audited overrides. Feeds the
+   * Administrator dashboard's "Librarian Activity" widget.
+   */
+  async staffActivity(range: Range) {
+    const { from, to } = resolveRange(range);
+    const rows = await prisma.$queryRaw<
+      { actor_id: string; name: string | null; role: string | null; total: bigint; overrides: bigint }[]
+    >(Prisma.sql`
+      SELECT a.actor_id AS actor_id, u.name AS name, u.role::text AS role,
+             COUNT(*)::bigint AS total,
+             COUNT(*) FILTER (WHERE a.is_override)::bigint AS overrides
+      FROM audit_logs a
+      LEFT JOIN users u ON u.id = a.actor_id
+      WHERE a.created_at BETWEEN ${from} AND ${to}
+      GROUP BY a.actor_id, u.name, u.role
+      ORDER BY total DESC
+    `);
+    return rows.map((r) => ({
+      actorId: r.actor_id,
+      name: r.name ?? 'Unknown',
+      role: r.role ?? 'Unknown',
+      totalActions: Number(r.total),
+      overrideActions: Number(r.overrides),
+    }));
+  }
+
+  /**
+   * Administrator-only oversight: total estimated spend on RECEIVED acquisitions,
+   * plus what's still pending (requested/approved/ordered but not yet received,
+   * which has no committed cost figure until it lands in the catalog).
+   */
+  async acquisitionExpenditure() {
+    const [received, pendingCount] = await Promise.all([
+      prisma.acquisition.aggregate({
+        where: { status: 'RECEIVED' },
+        _sum: { estimated_cost: true },
+        _count: true,
+      }),
+      prisma.acquisition.count({ where: { status: { in: ['REQUESTED', 'APPROVED', 'ORDERED'] } } }),
+    ]);
+    return {
+      receivedCount: received._count,
+      totalSpent: Number(received._sum.estimated_cost ?? 0),
+      pendingRequestCount: pendingCount,
+    };
+  }
 }
 
 export const analyticsService = new AnalyticsService();

@@ -5,6 +5,7 @@
 import { prisma } from '../../config/database';
 import { settingsService } from '../settings/settings.service';
 import { AppError } from '../../shared/appError';
+import { resolveMemberLevel } from '../../shared/memberLevel';
 
 export interface EligibilityResult {
   eligible: boolean;
@@ -19,7 +20,7 @@ export async function checkEligibility(userId: string): Promise<EligibilityResul
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new AppError('User not found', 404);
 
-  const level = (user.year_of_study ?? 0) >= 5 ? 'postgraduate' : 'undergraduate';
+  const level = resolveMemberLevel(user);
   const loanLimit = await settingsService.getNumber(`loan_limit_${level}`);
 
   const activeLoans = await prisma.loan.count({ where: { user_id: userId, returned_at: null } });

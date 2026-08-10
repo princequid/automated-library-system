@@ -1,5 +1,5 @@
 // src/admin-portal/pages/members/MemberCreateModal.jsx
-// POST /users is SUPER_ADMIN-only for every role, including STUDENT (see
+// POST /users is ADMINISTRATOR-only for every role, including STUDENT (see
 // backend/src/modules/users/users.routes.ts) - not LIBRARIAN+ like the rest
 // of Members. The response's tempPassword is generated once and never
 // stored or logged server-side (users.service.ts), so this is the only

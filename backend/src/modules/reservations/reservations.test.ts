@@ -11,6 +11,7 @@ jest.mock('../settings/settings.service', () => ({
   settingsService: { getNumber: jest.fn(async () => 5) },
 }));
 jest.mock('../users/eligibility', () => ({ checkEligibility: jest.fn(async () => ({ eligible: true })) }));
+jest.mock('../notifications/notifications.service', () => ({ notificationsService: { notify: jest.fn() } }));
 
 import { promoteQueue } from './reservations.service';
 

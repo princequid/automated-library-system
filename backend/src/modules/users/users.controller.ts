@@ -12,7 +12,7 @@ function requireUser(req: Request) {
 }
 
 // LIBRARIAN+ or the resource owner may view another user's loans/fines/eligibility.
-function assertSelfOrStaff(req: Request, targetId: string, minStaffRole: 'DESK_STAFF' | 'LIBRARIAN') {
+function assertSelfOrStaff(req: Request, targetId: string, minStaffRole: 'LIBRARIAN') {
   const user = requireUser(req);
   const isSelf = user.id === targetId;
   const isStaff = rank(user.role) >= rank(minStaffRole);
@@ -60,6 +60,17 @@ export const usersController = {
     sendSuccess(res, user, 'User status updated');
   },
 
+  async updateRole(req: Request, res: Response): Promise<void> {
+    const { before, after } = await usersService.updateRole(req.params.id, req.body);
+    res.locals.audit = {
+      entityType: 'User',
+      entityId: req.params.id,
+      before: { role: before },
+      after: { role: after.role },
+    };
+    sendSuccess(res, after, 'User role updated');
+  },
+
   async me(req: Request, res: Response): Promise<void> {
     const me = await usersService.getMe(requireUser(req).id);
     sendSuccess(res, me, 'Your profile');
@@ -76,7 +87,7 @@ export const usersController = {
   },
 
   async eligibility(req: Request, res: Response): Promise<void> {
-    assertSelfOrStaff(req, req.params.id, 'DESK_STAFF');
+    assertSelfOrStaff(req, req.params.id, 'LIBRARIAN');
     sendSuccess(res, await checkEligibility(req.params.id), 'Eligibility');
   },
 

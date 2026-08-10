@@ -6,6 +6,8 @@ import { differenceInCalendarDays } from 'date-fns';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { settingsService } from '../modules/settings/settings.service';
+import { resolveMemberLevel } from '../shared/memberLevel';
+import { notificationsService } from '../modules/notifications/notifications.service';
 import { logger } from '../config/logger';
 
 export async function runFineCalculation(): Promise<void> {
@@ -24,7 +26,7 @@ export async function runFineCalculation(): Promise<void> {
     const daysOverdue = differenceInCalendarDays(now, loan.due_date) - grace;
     if (daysOverdue <= 0) continue;
 
-    const level = (loan.user.year_of_study ?? 0) >= 5 ? 'postgraduate' : 'undergraduate';
+    const level = resolveMemberLevel(loan.user);
     const rate = await settingsService.getNumber(`fine_rate_${level}`);
     const accrued = Math.min(daysOverdue * rate, cap);
 
@@ -33,7 +35,7 @@ export async function runFineCalculation(): Promise<void> {
 
     if (!existing) {
       if (accrued > 0) {
-        await prisma.fine.create({
+        const fine = await prisma.fine.create({
           data: {
             loan_id: loan.id,
             user_id: loan.user_id,
@@ -42,6 +44,17 @@ export async function runFineCalculation(): Promise<void> {
           },
         });
         touched += 1;
+        // First time this loan crosses into overdue - the moment the audit
+        // flagged as having no notification at all, distinct from the
+        // existing 3-day/1-day upcoming-due reminders.
+        await notificationsService.notify({
+          userId: loan.user_id,
+          type: 'loan_overdue',
+          title: 'A loan is now overdue',
+          body: `Your loan is ${daysOverdue} day(s) overdue and has accrued a GHS ${accrued.toFixed(2)} fine.`,
+          entityType: 'Fine',
+          entityId: fine.id,
+        });
       }
     } else if (Number(existing.amount) < accrued) {
       // Update to the current accrued value - incremental, not additive.

@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { circulationController } from './circulation.controller';
 import { authenticate } from '../../middleware/auth';
-import { requireAtLeast, requireRole } from '../../middleware/rbac';
+import { requireAtLeast, requireLibrarianOrOverride, requireOverrideIfAdministrator, requireRole } from '../../middleware/rbac';
 import { validateBody, validateQuery } from '../../middleware/validate';
 import { asyncHandler } from '../../shared/asyncHandler';
 import { issueSchema, loansQuery, renewSchema, returnSchema, selfBorrowSchema } from './dto/circulation.dto';
@@ -15,16 +15,17 @@ router.use(authenticate);
  * /circulation/issue:
  *   post:
  *     tags: [Circulation]
- *     summary: Desk-issue a book to a member (DESK_STAFF+)
+ *     summary: Desk-issue a book to a member (LIBRARIAN normal; ADMINISTRATOR override only, requires override_reason)
  *     requestBody:
  *       content:
  *         application/json:
- *           schema: { type: object, required: [copy_id, user_id], properties: { copy_id: { type: string }, user_id: { type: string } } }
+ *           schema: { type: object, required: [copy_id, user_id], properties: { copy_id: { type: string }, user_id: { type: string }, override_reason: { type: string } } }
  *     responses:
  *       201: { description: Loan created }
+ *       400: { description: Administrator override missing override_reason }
  *       422: { description: Ineligible or copy unavailable }
  */
-router.post('/issue', requireAtLeast('DESK_STAFF'), validateBody(issueSchema), asyncHandler(circulationController.issue));
+router.post('/issue', requireLibrarianOrOverride(), validateBody(issueSchema), asyncHandler(circulationController.issue));
 
 /**
  * @swagger
@@ -49,46 +50,53 @@ router.post('/self-borrow', requireRole('STUDENT'), validateBody(selfBorrowSchem
  * /circulation/return:
  *   post:
  *     tags: [Circulation]
- *     summary: Return a book by barcode (DESK_STAFF+). Creates an overdue fine if late.
+ *     summary: Return a book by barcode (LIBRARIAN normal; ADMINISTRATOR override only, requires override_reason). Creates an overdue fine if late.
  *     responses:
  *       200: { description: Returned; body includes { loan, fine } }
+ *       400: { description: Administrator override missing override_reason }
  *       404: { description: No active loan for barcode }
  */
-router.post('/return', requireAtLeast('DESK_STAFF'), validateBody(returnSchema), asyncHandler(circulationController.returnBook));
+router.post('/return', requireLibrarianOrOverride(), validateBody(returnSchema), asyncHandler(circulationController.returnBook));
 
 /**
  * @swagger
  * /circulation/renew:
  *   post:
  *     tags: [Circulation]
- *     summary: Renew a loan (DESK_STAFF+, or the loan's own STUDENT)
+ *     summary: Renew a loan (LIBRARIAN or the loan's own STUDENT normally; ADMINISTRATOR requires override_reason)
  *     responses:
  *       200: { description: Renewed }
- *       400: { description: Already returned, max renewals reached, or reservation conflict }
+ *       400: { description: Already returned, max renewals reached, reservation conflict, or Administrator override missing override_reason }
  */
-router.post('/renew', requireAtLeast('STUDENT'), validateBody(renewSchema), asyncHandler(circulationController.renew));
+router.post(
+  '/renew',
+  requireAtLeast('STUDENT'),
+  requireOverrideIfAdministrator(),
+  validateBody(renewSchema),
+  asyncHandler(circulationController.renew)
+);
 
 /**
  * @swagger
  * /circulation/loans:
  *   get:
  *     tags: [Circulation]
- *     summary: List loans with filters (DESK_STAFF+)
+ *     summary: List loans with filters (LIBRARIAN+)
  *     parameters:
  *       - { in: query, name: overdue, schema: { type: boolean } }
  *       - { in: query, name: user_id, schema: { type: string } }
  *     responses: { 200: { description: Paginated loans } }
  */
-router.get('/loans', requireAtLeast('DESK_STAFF'), validateQuery(loansQuery), asyncHandler(circulationController.listLoans));
+router.get('/loans', requireAtLeast('LIBRARIAN'), validateQuery(loansQuery), asyncHandler(circulationController.listLoans));
 
 /**
  * @swagger
  * /circulation/reshelf:
  *   get:
  *     tags: [Circulation]
- *     summary: Copies returned today, ordered by shelf location (DESK_STAFF+)
+ *     summary: Copies returned today, ordered by shelf location (LIBRARIAN+)
  *     responses: { 200: { description: Reshelf list } }
  */
-router.get('/reshelf', requireAtLeast('DESK_STAFF'), asyncHandler(circulationController.reshelf));
+router.get('/reshelf', requireAtLeast('LIBRARIAN'), asyncHandler(circulationController.reshelf));
 
 export const circulationRoutes = router;

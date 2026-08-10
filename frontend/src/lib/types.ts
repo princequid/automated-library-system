@@ -70,6 +70,9 @@ export interface Fine {
   waived: boolean;
   waived_by: string | null;
   payment_reference: string | null;
+  payment_method: string | null;
+  disputed: boolean;
+  dispute_reason: string | null;
   created_at: string;
   user?: { id: string; name: string; email: string; student_id: string | null };
 }
@@ -114,4 +117,16 @@ export interface Setting {
   description: string;
   updated_by: string | null;
   updated_at: string;
+}
+
+export interface AppNotification {
+  id: string;
+  user_id: string;
+  type: string;
+  title: string;
+  body: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  read_at: string | null;
+  created_at: string;
 }

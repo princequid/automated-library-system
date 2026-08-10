@@ -9,6 +9,13 @@ import { circulationRoutes } from './circulation/circulation.routes';
 import { reservationsRoutes, myReservationsHandler } from './reservations/reservations.routes';
 import { finesRoutes } from './fines/fines.routes';
 import { analyticsRoutes } from './analytics/analytics.routes';
+import { notificationsRoutes } from './notifications/notifications.routes';
+import { maintenanceRoutes } from './maintenance/maintenance.routes';
+import { inventoryRoutes } from './inventory/inventory.routes';
+import { acquisitionsRoutes } from './acquisitions/acquisitions.routes';
+import { authorsRoutes, categoriesRoutes, publishersRoutes } from './catalogData/catalogData.routes';
+import { locationsRoutes } from './locations/locations.routes';
+import { auditLogRoutes } from './auditLogs/auditLog.routes';
 import { authenticate } from '../middleware/auth';
 import { asyncHandler } from '../shared/asyncHandler';
 
@@ -22,6 +29,15 @@ apiRouter.use('/circulation', circulationRoutes);
 apiRouter.use('/reservations', reservationsRoutes);
 apiRouter.use('/fines', finesRoutes);
 apiRouter.use('/analytics', analyticsRoutes);
+apiRouter.use('/notifications', notificationsRoutes);
+apiRouter.use('/maintenance', maintenanceRoutes);
+apiRouter.use('/inventory', inventoryRoutes);
+apiRouter.use('/acquisitions', acquisitionsRoutes);
+apiRouter.use('/authors', authorsRoutes);
+apiRouter.use('/publishers', publishersRoutes);
+apiRouter.use('/categories', categoriesRoutes);
+apiRouter.use('/locations', locationsRoutes);
+apiRouter.use('/audit-logs', auditLogRoutes);
 
 /**
  * @swagger

@@ -12,10 +12,8 @@ datasource db {
 
 enum UserRole {
   STUDENT
-  DESK_STAFF
   LIBRARIAN
-  SENIOR_LIBRARIAN
-  SUPER_ADMIN
+  ADMINISTRATOR
 }
 
 enum UserStatus {
@@ -42,21 +40,59 @@ enum ResStatus {
   CANCELLED
 }
 
+enum MemberLevel {
+  UNDERGRADUATE
+  POSTGRADUATE
+  LECTURER
+}
+
+enum MaintenanceSeverity {
+  MINOR
+  MAJOR
+  SEVERE
+}
+
+enum MaintenanceStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  WITHDRAWN
+}
+
+enum InventorySessionStatus {
+  OPEN
+  COMPLETED
+}
+
+enum AcquisitionStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  ORDERED
+  RECEIVED
+}
+
 model User {
-  id            String     @id @default(uuid())
-  email         String     @unique
-  student_id    String?    @unique
+  id            String       @id @default(uuid())
+  email         String       @unique
+  student_id    String?      @unique
   name          String
   department    String?
   year_of_study Int?
-  role          UserRole   @default(STUDENT)
-  status        UserStatus @default(ACTIVE)
+  // Explicit borrowing-policy tier. When unset, resolveMemberLevel() falls back
+  // to the year_of_study >= 5 heuristic (undergraduate/postgraduate only - a
+  // lecturer can never be inferred, so this must be set explicitly for staff
+  // who borrow as lecturers). See src/shared/memberLevel.ts.
+  member_level  MemberLevel?
+  role          UserRole     @default(STUDENT)
+  status        UserStatus   @default(ACTIVE)
   // password_hash is required for ALL roles, including STUDENT.
   password_hash String
 
-  loans        Loan[]
-  fines        Fine[]
-  reservations Reservation[]
+  loans         Loan[]
+  fines         Fine[]
+  reservations  Reservation[]
+  notifications Notification[]
 
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
@@ -69,22 +105,37 @@ model User {
 }
 
 model CatalogItem {
-  id               String   @id @default(uuid())
-  isbn             String?  @unique
+  id               String     @id @default(uuid())
+  isbn             String?    @unique
   title            String
+  // Free-text author/publisher stay as the display fields - author_id/publisher_id
+  // are additive links to the normalized entities below, backfilled from these
+  // strings by prisma/scripts/backfillEntities.ts. Neither becomes required, so
+  // existing rows and every existing read site keep working unchanged.
   author           String
+  author_id        String?
+  authorRef        Author?    @relation(fields: [author_id], references: [id])
   publisher        String?
+  publisher_id     String?
+  publisherRef     Publisher? @relation(fields: [publisher_id], references: [id])
   year             Int?
-  subject_tags     String[] @default([])
+  subject_tags     String[]   @default([])
+  categories       Category[]
   abstract         String?
+  // shelf_location stays as the display fallback string; shelf_id is the
+  // structured Library -> Floor -> Section -> Shelf pointer, also backfilled.
   shelf_location   String?
+  shelf_id         String?
+  shelf            Shelf?     @relation(fields: [shelf_id], references: [id])
+  replacement_cost Decimal?   @db.Decimal(8, 2)
   cover_url        String?
-  available_copies Int      @default(0)
-  total_copies     Int      @default(0)
+  available_copies Int        @default(0)
+  total_copies     Int        @default(0)
   created_by       String?
 
   copies       Copy[]
   reservations Reservation[]
+  acquisitions Acquisition[]
 
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
@@ -96,14 +147,18 @@ model CatalogItem {
 }
 
 model Copy {
-  id              String     @id @default(uuid())
+  id              String      @id @default(uuid())
   catalog_item_id String
   catalog_item    CatalogItem @relation(fields: [catalog_item_id], references: [id], onDelete: Cascade)
-  barcode         String     @unique
-  status          CopyStatus @default(AVAILABLE)
+  barcode         String      @unique
+  status          CopyStatus  @default(AVAILABLE)
   condition       String?
+  // Cached QR payload (currently just the barcode) so GET /catalog/copies/:id/qrcode
+  // doesn't need to recompute it - set once at copy creation.
+  qr_payload      String?
 
-  loans Loan[]
+  loans        Loan[]
+  maintenances Maintenance[]
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -153,23 +208,34 @@ model Reservation {
 }
 
 model Fine {
-  id                String   @id @default(uuid())
-  loan_id           String?
-  loan              Loan?    @relation(fields: [loan_id], references: [id])
-  user_id           String
-  user              User     @relation(fields: [user_id], references: [id])
-  amount            Decimal  @db.Decimal(8, 2)
-  reason            String
-  paid              Boolean  @default(false)
-  paid_at           DateTime?
-  waived            Boolean  @default(false)
-  waived_by         String?
-  payment_reference String?
-  created_at        DateTime @default(now())
+  id                  String    @id @default(uuid())
+  loan_id             String?
+  loan                Loan?     @relation(fields: [loan_id], references: [id])
+  user_id             String
+  user                User      @relation(fields: [user_id], references: [id])
+  amount              Decimal   @db.Decimal(8, 2)
+  reason              String
+  paid                Boolean   @default(false)
+  paid_at             DateTime?
+  // 'MOCK' for the simulated self-pay flow, 'MANUAL' for a staff-recorded
+  // cash/offline payment. Null until paid.
+  payment_method      String?
+  waived              Boolean   @default(false)
+  waived_by           String?
+  payment_reference   String?
+  // A student-raised dispute. disputed stays true until a LIBRARIAN (or an
+  // ADMINISTRATOR via the audited override path) either waives the fine or
+  // explicitly rejects the dispute (dispute_resolved_at set, disputed flips
+  // back to false, the fine itself stands).
+  disputed            Boolean   @default(false)
+  dispute_reason      String?
+  dispute_resolved_at DateTime?
+  created_at          DateTime  @default(now())
 
   @@index([user_id])
   @@index([loan_id])
   @@index([paid])
+  @@index([disputed])
   @@map("fines")
 }
 
@@ -179,7 +245,7 @@ model Setting {
   type        String // 'number' | 'boolean' | 'string'
   description String
   updated_by  String?
-  updated_at  DateTime @updatedAt @default(now())
+  updated_at  DateTime @default(now()) @updatedAt
 
   @@map("settings")
 }
@@ -192,10 +258,208 @@ model AuditLog {
   entity_id   String?
   before      Json?
   after       Json?
+  // Set when an ADMINISTRATOR performs a routine operational action (circulation,
+  // fines, force-delete) that Librarians normally own. See requireLibrarianOrOverride()
+  // in src/middleware/rbac.ts - override_reason is required whenever is_override is true.
+  is_override     Boolean  @default(false)
+  override_reason String?
   created_at  DateTime @default(now())
 
   @@index([actor_id])
   @@index([entity_type])
   @@index([created_at])
   @@map("audit_logs")
+}
+
+// ============================== Catalog entities ==============================
+// Additive alongside CatalogItem's own author/publisher/subject_tags strings -
+// see the comments on those fields. Backfilled from existing data by
+// prisma/scripts/backfillEntities.ts.
+
+model Author {
+  id           String        @id @default(uuid())
+  name         String        @unique
+  bio          String?
+  catalogItems CatalogItem[]
+
+  created_at DateTime @default(now())
+
+  @@map("authors")
+}
+
+model Publisher {
+  id           String        @id @default(uuid())
+  name         String        @unique
+  website      String?
+  catalogItems CatalogItem[]
+
+  created_at DateTime @default(now())
+
+  @@map("publishers")
+}
+
+model Category {
+  id           String        @id @default(uuid())
+  name         String        @unique
+  catalogItems CatalogItem[]
+
+  created_at DateTime @default(now())
+
+  @@map("categories")
+}
+
+// ============================== Location hierarchy ==============================
+// Library -> Floor -> Section -> Shelf. CatalogItem.shelf_id points to the leaf;
+// shelf_location (a plain string) remains the display fallback for items never
+// migrated to a structured shelf.
+
+model Library {
+  id     String  @id @default(uuid())
+  name   String  @unique
+  floors Floor[]
+
+  created_at DateTime @default(now())
+
+  @@map("libraries")
+}
+
+model Floor {
+  id         String    @id @default(uuid())
+  library_id String
+  library    Library   @relation(fields: [library_id], references: [id], onDelete: Cascade)
+  name       String
+  sections   Section[]
+
+  @@index([library_id])
+  @@map("floors")
+}
+
+model Section {
+  id       String  @id @default(uuid())
+  floor_id String
+  floor    Floor   @relation(fields: [floor_id], references: [id], onDelete: Cascade)
+  name     String
+  shelves  Shelf[]
+
+  @@index([floor_id])
+  @@map("sections")
+}
+
+model Shelf {
+  id                String             @id @default(uuid())
+  section_id        String
+  section           Section            @relation(fields: [section_id], references: [id], onDelete: Cascade)
+  name              String
+  catalogItems      CatalogItem[]
+  inventorySessions InventorySession[]
+
+  @@index([section_id])
+  @@map("shelves")
+}
+
+// ============================== Maintenance ==============================
+// One ticket per repair cycle on a Copy. Opened automatically when a copy's
+// status transitions to DAMAGED (see catalog.service.ts updateCopy), or
+// manually via POST /maintenance. Resolving sets the copy back to AVAILABLE
+// (repaired) or WITHDRAWN (beyond repair).
+
+model Maintenance {
+  id          String              @id @default(uuid())
+  copy_id     String
+  copy        Copy                @relation(fields: [copy_id], references: [id], onDelete: Cascade)
+  severity    MaintenanceSeverity
+  status      MaintenanceStatus   @default(OPEN)
+  notes       String?
+  opened_by   String
+  opened_at   DateTime            @default(now())
+  resolved_by String?
+  resolved_at DateTime?
+
+  @@index([copy_id])
+  @@index([status])
+  @@map("maintenance_records")
+}
+
+// ============================== Inventory (stocktake) ==============================
+// A librarian starts a session (optionally scoped to one shelf), scans
+// barcodes as they physically check the shelf, then completes it - the
+// service diffs expected copies (AVAILABLE/ON_LOAN/RESERVED at that shelf)
+// against what was actually scanned and flags the rest as missing.
+
+model InventorySession {
+  id             String                 @id @default(uuid())
+  shelf_id       String?
+  shelf          Shelf?                 @relation(fields: [shelf_id], references: [id])
+  started_by     String
+  started_at     DateTime               @default(now())
+  completed_at   DateTime?
+  expected_count Int                    @default(0)
+  scanned_count  Int                    @default(0)
+  status         InventorySessionStatus @default(OPEN)
+  scans          InventoryScan[]
+
+  @@index([shelf_id])
+  @@index([status])
+  @@map("inventory_sessions")
+}
+
+model InventoryScan {
+  id         String           @id @default(uuid())
+  session_id String
+  session    InventorySession @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  barcode    String
+  matched    Boolean
+  created_at DateTime         @default(now())
+
+  @@index([session_id])
+  @@map("inventory_scans")
+}
+
+// ============================== Acquisitions ==============================
+// Book request -> Administrator approval -> purchase -> catalogued. Deliberately
+// pre-catalog (title/author/isbn are free text here, not FKs) since the whole
+// point is that the CatalogItem doesn't exist yet; RECEIVED links catalog_item_id
+// back once one is created.
+
+model Acquisition {
+  id              String            @id @default(uuid())
+  title           String
+  author          String?
+  isbn            String?
+  requested_by    String
+  status          AcquisitionStatus @default(REQUESTED)
+  approved_by     String?
+  notes           String?
+  // Librarian-supplied estimate at request time - feeds the Administrator
+  // dashboard's acquisition-expenditure analytics (see analytics.service.ts).
+  estimated_cost  Decimal?          @db.Decimal(8, 2)
+  catalog_item_id String?
+  catalogItem     CatalogItem?      @relation(fields: [catalog_item_id], references: [id])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([status])
+  @@map("acquisitions")
+}
+
+// ============================== Notifications ==============================
+// In-app feed, written by notificationsService.notify() alongside (not instead
+// of) the existing email path - see src/modules/notifications/notifications.service.ts.
+
+model Notification {
+  id          String    @id @default(uuid())
+  user_id     String
+  user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  type        String
+  title       String
+  body        String
+  entity_type String?
+  entity_id   String?
+  read_at     DateTime?
+  created_at  DateTime  @default(now())
+
+  @@index([user_id])
+  @@index([read_at])
+  @@map("notifications")
 }

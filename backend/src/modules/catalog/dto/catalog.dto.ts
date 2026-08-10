@@ -19,11 +19,16 @@ export const createCatalogSchema = z.object({
   isbn: z.string().optional(),
   title: z.string().min(1),
   author: z.string().min(1),
+  author_id: z.string().optional(),
   publisher: z.string().optional(),
+  publisher_id: z.string().optional(),
   year: z.coerce.number().int().optional(),
   subject_tags: z.array(z.string()).default([]),
+  category_ids: z.array(z.string()).default([]),
   abstract: z.string().optional(),
   shelf_location: z.string().optional(),
+  shelf_id: z.string().optional(),
+  replacement_cost: z.coerce.number().positive().optional(),
   cover_url: z.string().url().optional(),
 });
 

@@ -3,6 +3,7 @@
 // a real dialog with a required-reason field, not a window.prompt().
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '@/store/auth.store';
 import { apiErrorMessage } from '@/lib/api';
 import { finesService } from '../../services/finesService';
 import { Modal } from '../../components/common/Modal';
@@ -14,9 +15,18 @@ export function WaiveFineModal({ open, onClose, fine }) {
   const [reason, setReason] = useState('');
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { user } = useAuthStore();
+  // waive is requireLibrarianOrOverride() on the backend - LIBRARIAN needs
+  // only the waive `reason`; ADMINISTRATOR additionally needs override_reason,
+  // which this single reason field doubles as (one justification serves both).
+  const isAdministrator = user?.role === 'ADMINISTRATOR';
 
   const waive = useMutation({
-    mutationFn: () => finesService.waiveOne(fine.id, { reason: reason.trim() }),
+    mutationFn: () =>
+      finesService.waiveOne(fine.id, {
+        reason: reason.trim(),
+        ...(isAdministrator ? { override_reason: reason.trim() } : {}),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fines'] });
       toast.success('Fine waived.');
@@ -46,6 +56,7 @@ export function WaiveFineModal({ open, onClose, fine }) {
     >
       <p className="member-created-note">
         Waiving GHS {Number(fine.amount).toFixed(2)} for {fine.user.name} - {fine.reason}
+        {isAdministrator && ' This is normally a Librarian action; as an Administrator it will be recorded as an override.'}
       </p>
       <FormField label="Reason" required>
         {(props) => <input {...props} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Required for the audit trail" autoFocus />}

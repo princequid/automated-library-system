@@ -10,6 +10,7 @@ export const usersService = {
   create: (payload) => http.post('/users', payload).then((r) => r.data),
   update: (id, payload) => http.put(`/users/${id}`, payload).then((r) => r.data),
   setStatus: (id, payload) => http.put(`/users/${id}/status`, payload).then((r) => r.data),
+  setRole: (id, role) => http.put(`/users/${id}/role`, { role }).then((r) => r.data),
   loans: (id) => http.get(`/users/${id}/loans`).then((r) => r.data),
   fines: (id) => http.get(`/users/${id}/fines`).then((r) => r.data),
   eligibility: (id) => http.get(`/users/${id}/eligibility`).then((r) => r.data),

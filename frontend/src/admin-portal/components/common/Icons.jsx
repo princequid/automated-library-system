@@ -41,6 +41,15 @@ import {
   PackagePlus,
   UserRound,
   LogOut,
+  Bookmark,
+  Wrench,
+  ClipboardList,
+  ShoppingCart,
+  Tags,
+  SlidersHorizontal,
+  ScrollText,
+  MapPin,
+  QrCode,
 } from 'lucide-react';
 
 const withDefaults = (Icon) => {
@@ -89,3 +98,12 @@ export const FinesIcon = withDefaults(CircleDollarSign);
 export const ItemsAddedIcon = withDefaults(PackagePlus);
 export const UserIcon = withDefaults(UserRound);
 export const LogoutIcon = withDefaults(LogOut);
+export const ReservationsIcon = withDefaults(Bookmark);
+export const MaintenanceIcon = withDefaults(Wrench);
+export const InventoryIcon = withDefaults(ClipboardList);
+export const AcquisitionsIcon = withDefaults(ShoppingCart);
+export const CatalogDataIcon = withDefaults(Tags);
+export const SettingsIcon = withDefaults(SlidersHorizontal);
+export const AuditLogIcon = withDefaults(ScrollText);
+export const LocationsIcon = withDefaults(MapPin);
+export const QrCodeIcon = withDefaults(QrCode);

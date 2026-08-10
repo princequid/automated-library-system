@@ -11,4 +11,7 @@ export const reportsService = {
   topBorrowed: (params) => http.get('/analytics/top-borrowed', { params }).then((r) => r.data),
   borrowingByDept: () => http.get('/analytics/borrowing-by-dept').then((r) => r.data),
   recentActivity: () => http.get('/analytics/recent-activity').then((r) => r.data),
+  // ADMINISTRATOR only - see backend/src/modules/analytics/analytics.routes.ts.
+  staffActivity: (params) => http.get('/analytics/staff-activity', { params }).then((r) => r.data),
+  acquisitionExpenditure: () => http.get('/analytics/acquisition-expenditure').then((r) => r.data),
 };

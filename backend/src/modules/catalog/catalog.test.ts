@@ -16,7 +16,7 @@ describe('catalog', () => {
   it('rejects a duplicate ISBN with 409', async () => {
     mockPrisma.catalogItem.findUnique.mockResolvedValue({ id: 'existing' });
     await expect(
-      catalogService.create({ isbn: '123', title: 'T', author: 'A', subject_tags: [] }, 'admin')
+      catalogService.create({ isbn: '123', title: 'T', author: 'A', subject_tags: [], category_ids: [] }, 'admin')
     ).rejects.toMatchObject({ statusCode: 409 });
   });
 

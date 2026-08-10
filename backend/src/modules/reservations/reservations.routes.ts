@@ -34,13 +34,13 @@ router.get('/', requireAtLeast('LIBRARIAN'), validateQuery(listReservationsQuery
  * /reservations/{id}:
  *   delete:
  *     tags: [Reservations]
- *     summary: Cancel a reservation (owner or LIBRARIAN+); compacts the queue
+ *     summary: Cancel a reservation (owning STUDENT, or LIBRARIAN - Administrator has view-only access, no override); compacts the queue
  *     parameters: [{ in: path, name: id, required: true, schema: { type: string } }]
  *     responses:
  *       200: { description: Cancelled }
  *       403: { description: Not permitted }
  */
-router.delete('/:id', asyncHandler(reservationsController.cancel));
+router.delete('/:id', requireRole('STUDENT', 'LIBRARIAN'), asyncHandler(reservationsController.cancel));
 
 export const reservationsRoutes = router;
 

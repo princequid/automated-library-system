@@ -1,6 +1,7 @@
 // frontend/src/pages/student/AccountPage.tsx
 // Profile summary, a borrowing-quota ring, an itemised fines section with "Pay all",
 // and a change-password form.
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,12 +13,14 @@ import { Field } from '@/components/ui/field';
 import { ProgressRing } from '@/components/ui/progress-ring';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/states';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PageHeader } from '@/components/shared';
 import { toast } from '@/components/ui/toast';
-import { useMe, useMyFines, useMyEligibility, usePayFines } from '@/hooks/api';
+import { useMe, useMyFines, useMyEligibility, usePayFines, useDisputeFine } from '@/hooks/api';
 import { useChangePassword } from '@/hooks/useAuth';
 import { apiErrorMessage } from '@/lib/api';
 import { formatGhs } from '@/lib/format';
+import type { Fine } from '@/lib/types';
 
 const passwordSchema = z
   .object({
@@ -33,10 +36,25 @@ export function AccountPage() {
   const fines = useMyFines();
   const eligibility = useMyEligibility();
   const pay = usePayFines();
+  const dispute = useDisputeFine();
   const changePassword = useChangePassword();
+  const [disputing, setDisputing] = useState<Fine | null>(null);
+  const [disputeReason, setDisputeReason] = useState('');
 
   const unpaidFines = (fines.data ?? []).filter((f) => !f.paid && !f.waived);
   const finesTotal = unpaidFines.reduce((sum, f) => sum + Number(f.amount), 0);
+
+  const onDispute = async () => {
+    if (!disputing) return;
+    try {
+      await dispute.mutateAsync({ id: disputing.id, reason: disputeReason.trim() });
+      toast.success('Dispute submitted', 'A librarian will review it.');
+      setDisputing(null);
+      setDisputeReason('');
+    } catch (err) {
+      toast.error('Could not submit dispute', apiErrorMessage(err));
+    }
+  };
 
   const {
     register,
@@ -113,8 +131,22 @@ export function AccountPage() {
               <ul className="divide-y divide-border">
                 {unpaidFines.map((fine) => (
                   <li key={fine.id} className="flex items-center justify-between py-3">
-                    <span className="text-sm text-text-primary">{fine.reason}</span>
-                    <span className="text-sm font-medium text-error-text">{formatGhs(fine.amount)}</span>
+                    <span className="text-sm text-text-primary">
+                      {fine.reason}
+                      {fine.disputed && <span className="ml-2 text-xs font-medium text-warning-text">Disputed</span>}
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-error-text">{formatGhs(fine.amount)}</span>
+                      {!fine.disputed && (
+                        <button
+                          type="button"
+                          className="text-xs font-medium text-text-secondary underline hover:text-text-primary"
+                          onClick={() => setDisputing(fine)}
+                        >
+                          Dispute
+                        </button>
+                      )}
+                    </div>
                   </li>
                 ))}
                 <li className="flex items-center justify-between pt-3">
@@ -151,6 +183,22 @@ export function AccountPage() {
           </CardContent>
         </Card>
       </div>
+
+      <ConfirmDialog
+        open={!!disputing}
+        onOpenChange={(open) => !open && setDisputing(null)}
+        title="Dispute this fine"
+        description={disputing ? `${disputing.reason} — ${formatGhs(disputing.amount)}` : undefined}
+        confirmLabel="Submit dispute"
+        destructive={false}
+        loading={dispute.isPending}
+        confirmDisabled={!disputeReason.trim()}
+        onConfirm={onDispute}
+      >
+        <Field label="Why are you disputing this fine?" htmlFor="dispute-reason">
+          <Input id="dispute-reason" value={disputeReason} onChange={(e) => setDisputeReason(e.target.value)} placeholder="e.g. I returned this on time" />
+        </Field>
+      </ConfirmDialog>
     </PageTransition>
   );
 }

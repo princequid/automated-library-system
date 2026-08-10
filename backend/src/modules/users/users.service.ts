@@ -9,7 +9,8 @@ import { AppError } from '../../shared/appError';
 import { generateTempPassword } from '../../shared/password';
 import { parseCsv, toCsv } from '../../shared/csv';
 import { buildMeta } from '../../shared/responseHelper';
-import { CreateUserDto, ListUsersQuery, UpdateStatusDto, UpdateUserDto } from './dto/user.dto';
+import { notificationsService } from '../notifications/notifications.service';
+import { CreateUserDto, ListUsersQuery, UpdateRoleDto, UpdateStatusDto, UpdateUserDto } from './dto/user.dto';
 
 const BCRYPT_COST = 12;
 
@@ -21,6 +22,7 @@ const publicUserSelect = {
   name: true,
   department: true,
   year_of_study: true,
+  member_level: true,
   role: true,
   status: true,
   created_at: true,
@@ -74,6 +76,7 @@ class UsersService {
           student_id: dto.student_id,
           department: dto.department,
           year_of_study: dto.year_of_study,
+          member_level: dto.member_level,
           password_hash: hash,
         },
         select: publicUserSelect,
@@ -148,9 +151,36 @@ class UsersService {
     }
   }
 
+  /**
+   * Reassign a user's role (Roles & Permissions - ADMINISTRATOR only). Blocks
+   * demoting the last remaining ADMINISTRATOR account so the system can never
+   * be left with no one able to manage users/policy/settings.
+   */
+  async updateRole(id: string, dto: UpdateRoleDto) {
+    const target = await this.getById(id);
+    const before = target.role;
+    if (before === 'ADMINISTRATOR' && dto.role !== 'ADMINISTRATOR') {
+      const otherAdmins = await prisma.user.count({
+        where: { role: 'ADMINISTRATOR', deleted_at: null, id: { not: id } },
+      });
+      if (otherAdmins === 0) {
+        throw new AppError('Cannot change role: this is the only remaining Administrator account', 409);
+      }
+    }
+    const updated = await prisma.user.update({ where: { id }, data: { role: dto.role }, select: publicUserSelect });
+    return { before, after: updated };
+  }
+
   async updateStatus(id: string, dto: UpdateStatusDto) {
     await this.getById(id);
-    return prisma.user.update({ where: { id }, data: { status: dto.status }, select: publicUserSelect });
+    const updated = await prisma.user.update({ where: { id }, data: { status: dto.status }, select: publicUserSelect });
+    await notificationsService.notify({
+      userId: id,
+      type: 'account_status_changed',
+      title: `Your account status changed to ${dto.status}`,
+      body: dto.reason,
+    });
+    return updated;
   }
 
   /** Own profile enriched with live activity counts. */

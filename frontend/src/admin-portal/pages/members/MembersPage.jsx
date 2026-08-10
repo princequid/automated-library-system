@@ -54,7 +54,7 @@ function useMemberPillCounts() {
 export function MembersPage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const canCreate = rankAtLeast(user?.role, 'SUPER_ADMIN');
+  const canCreate = rankAtLeast(user?.role, 'ADMINISTRATOR');
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');

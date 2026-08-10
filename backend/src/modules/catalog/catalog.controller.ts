@@ -3,6 +3,8 @@ import { Request, Response } from 'express';
 import { catalogService } from './catalog.service';
 import { sendSuccess, sendCreated } from '../../shared/responseHelper';
 import { AppError } from '../../shared/appError';
+import { generateQrPng } from '../../shared/qrcode';
+import { prisma } from '../../config/database';
 
 function requireUser(req: Request) {
   if (!req.user) throw new AppError('Authentication required', 401);
@@ -32,7 +34,7 @@ export const catalogController = {
   },
 
   async remove(req: Request, res: Response): Promise<void> {
-    await catalogService.softDelete(req.params.id);
+    await catalogService.softDelete(req.params.id, req.isOverride === true);
     res.locals.audit = { entityType: 'CatalogItem', entityId: req.params.id };
     sendSuccess(res, null, 'Catalog item deleted');
   },
@@ -54,9 +56,17 @@ export const catalogController = {
   },
 
   async updateCopy(req: Request, res: Response): Promise<void> {
-    const copy = await catalogService.updateCopy(req.params.id, req.body);
+    const copy = await catalogService.updateCopy(req.params.id, req.body, requireUser(req).id);
     res.locals.audit = { entityType: 'Copy', entityId: req.params.id, after: copy };
     sendSuccess(res, copy, 'Copy updated');
+  },
+
+  async copyQrCode(req: Request, res: Response): Promise<void> {
+    const copy = await prisma.copy.findUnique({ where: { id: req.params.id } });
+    if (!copy) throw new AppError('Copy not found', 404);
+    const png = await generateQrPng(copy.qr_payload ?? copy.barcode);
+    res.setHeader('Content-Type', 'image/png');
+    res.send(png);
   },
 
   async bulkImport(req: Request, res: Response): Promise<void> {

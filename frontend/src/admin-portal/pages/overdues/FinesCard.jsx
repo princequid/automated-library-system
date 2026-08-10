@@ -11,6 +11,10 @@ import { DataTable } from '../../components/common/DataTable';
 import { Button } from '../../components/common/Button';
 import { FilterPills } from '../../components/common/FilterPills';
 import { RowActions } from '../../components/common/RowActions';
+import { Badge } from '../../components/common/Badge';
+import { useToast } from '../../components/common/Toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { OverrideReasonModal } from '../../components/common/OverrideReasonModal';
 import { BulkWaiveModal } from './BulkWaiveModal';
 import { WaiveFineModal } from './WaiveFineModal';
 
@@ -21,6 +25,7 @@ const PAGE_SIZE = 10;
 // not just a page. Real, backend-derived counts, one request per pill.
 const PILLS = [
   { key: 'unresolved', label: 'Unresolved', params: { paid: false, waived: false } },
+  { key: 'disputed', label: 'Disputed', params: { disputed: true } },
   { key: 'paid', label: 'Paid', params: { paid: true } },
   { key: 'waived', label: 'Waived', params: { waived: true } },
   { key: 'all', label: 'All', params: {} },
@@ -36,13 +41,31 @@ function useFinePillCounts() {
 export function FinesCard() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const canWaive = rankAtLeast(user?.role, 'SENIOR_LIBRARIAN');
+  // waive/pay-manual are requireLibrarianOrOverride() on the backend - both
+  // roles reach these, but ADMINISTRATOR must supply an override_reason.
+  const canWaive = rankAtLeast(user?.role, 'LIBRARIAN');
+  const canRecordPayment = rankAtLeast(user?.role, 'LIBRARIAN');
+  const isAdministrator = user?.role === 'ADMINISTRATOR';
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  const payManual = useMutation({
+    mutationFn: ({ id, overrideReason }) =>
+      finesService.payManual(id, overrideReason ? { override_reason: overrideReason } : undefined),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fines'] });
+      toast.success('Payment recorded.');
+      setOverridingPayment(null);
+    },
+    onError: (err) => toast.error(apiErrorMessage(err, 'Could not record this payment.')),
+  });
 
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState('unresolved');
   const [selected, setSelected] = useState(new Set());
   const [bulkOpen, setBulkOpen] = useState(false);
   const [waivingFine, setWaivingFine] = useState(null);
+  const [overridingPayment, setOverridingPayment] = useState(null);
 
   const counts = useFinePillCounts();
   const pillOptions = PILLS.map((p) => ({ key: p.key, label: p.label, count: counts[p.key] }));
@@ -63,8 +86,30 @@ export function FinesCard() {
 
   const columns = useMemo(
     () => [
-      { key: 'user', header: 'Member', accessor: (row) => row.user.name, sortable: true, truncate: true, width: '28%' },
-      { key: 'reason', header: 'Reason', accessor: (row) => row.reason, truncate: true, width: '36%' },
+      {
+        key: 'user',
+        header: 'Member',
+        accessor: (row) => row.user.name,
+        sortable: true,
+        truncate: true,
+        width: '24%',
+      },
+      {
+        key: 'reason',
+        header: 'Reason',
+        truncate: true,
+        width: '32%',
+        render: (row) => (
+          <span>
+            {row.disputed && (
+              <span style={{ marginRight: 'var(--space-2)', display: 'inline-block' }}>
+                <Badge variant="warning">Disputed</Badge>
+              </span>
+            )}
+            {row.reason}
+          </span>
+        ),
+      },
       {
         key: 'amount',
         header: 'Amount (GHS)',
@@ -77,17 +122,23 @@ export function FinesCard() {
       {
         key: 'actions',
         header: 'Actions',
-        render: (row) => (
-          <RowActions
-            onView={() => openFine(row)}
-            menuItems={canWaive && !row.paid && !row.waived ? [{ label: 'Waive', onClick: () => setWaivingFine(row) }] : []}
-          />
-        ),
-        width: '18%',
+        render: (row) => {
+          const unresolved = !row.paid && !row.waived;
+          const menuItems = [];
+          if (canWaive && unresolved) menuItems.push({ label: 'Waive', onClick: () => setWaivingFine(row) });
+          if (canRecordPayment && unresolved && !row.disputed) {
+            menuItems.push({
+              label: 'Record payment',
+              onClick: () => (isAdministrator ? setOverridingPayment(row) : payManual.mutate({ id: row.id })),
+            });
+          }
+          return <RowActions onView={() => openFine(row)} menuItems={menuItems} />;
+        },
+        width: '26%',
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [canWaive]
+    [canWaive, canRecordPayment, isAdministrator]
   );
 
   const selectedFines = allFines.filter((f) => selected.has(f.id));
@@ -155,6 +206,20 @@ export function FinesCard() {
           />
           <WaiveFineModal open={!!waivingFine} onClose={() => setWaivingFine(null)} fine={waivingFine} />
         </>
+      )}
+
+      {canRecordPayment && isAdministrator && (
+        <OverrideReasonModal
+          open={!!overridingPayment}
+          onClose={() => setOverridingPayment(null)}
+          title="Record payment"
+          description={
+            overridingPayment &&
+            `Recording GHS ${Number(overridingPayment.amount).toFixed(2)} as paid for ${overridingPayment.user.name}. This is normally a Librarian action, so the reason is recorded as an override.`
+          }
+          onConfirm={(reason) => payManual.mutate({ id: overridingPayment.id, overrideReason: reason })}
+          loading={payManual.isPending}
+        />
       )}
     </TableCard>
   );

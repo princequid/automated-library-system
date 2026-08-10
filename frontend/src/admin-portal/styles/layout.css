@@ -56,7 +56,17 @@
   padding: var(--space-4) var(--space-3);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-4);
+}
+.admin-portal .sidebar-section { display: flex; flex-direction: column; gap: 2px; }
+.admin-portal .sidebar-section-label {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  color: var(--sidebar-text-muted, var(--sidebar-text));
+  opacity: 0.6;
+  padding: 0 var(--space-3) var(--space-1);
 }
 .admin-portal .sidebar-link {
   display: flex;
@@ -173,6 +183,75 @@
 }
 .admin-portal .theme-toggle:hover { background: var(--color-surface-hover); color: var(--color-text-1); }
 
+/* ============================== NotificationBell ============================== */
+.admin-portal .notification-bell-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-white);
+  color: var(--color-text-2);
+  cursor: pointer;
+}
+.admin-portal .notification-bell-trigger:hover { background: var(--color-surface-hover); color: var(--color-text-1); }
+.admin-portal .notification-bell-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  padding: 0 3px;
+  border-radius: var(--radius-full);
+  background: var(--color-danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+/* Portalled into #admin-portal-overlay-root, same reasoning as KebabMenu's
+   own comment - escapes ancestor overflow/clipping instead of being cut off. */
+.admin-portal .notification-panel {
+  width: 320px;
+  max-height: 420px;
+  overflow-y: auto;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  z-index: 60;
+}
+.admin-portal .notification-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  position: sticky;
+  top: 0;
+  background: var(--color-white);
+}
+.admin-portal .notification-panel-empty { padding: var(--space-5) var(--space-4); text-align: center; color: var(--color-text-3); font-size: var(--text-sm); }
+.admin-portal .notification-panel-list { list-style: none; margin: 0; padding: 0; }
+.admin-portal .notification-panel-item {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+}
+.admin-portal .notification-panel-item:hover { background: var(--color-surface-hover); }
+.admin-portal .notification-panel-item.is-unread { background: var(--color-primary-soft); }
+.admin-portal .notification-panel-item-title { margin: 0; font-size: var(--text-sm); font-weight: 600; color: var(--color-text-1); }
+.admin-portal .notification-panel-item-body { margin: var(--space-1) 0 0; font-size: var(--text-sm); color: var(--color-text-2); }
+.admin-portal .notification-panel-item-time { display: block; margin-top: var(--space-1); font-size: var(--text-xs); color: var(--color-text-3); }
+
 /* ============================== Breadcrumbs ============================== */
 .admin-portal .breadcrumbs ol {
   display: flex;
@@ -227,8 +306,54 @@
   gap: var(--space-3);
 }
 
+/* ============================== Quick actions ============================== */
+/* Per-role shortcut grid on the Librarian/Administrator dashboards - see
+   QuickActions.jsx. Deliberately a distinct visual block from the KPI strip
+   so the two dashboards don't just read as "the same page with extra cards". */
+.admin-portal .quick-actions { margin-bottom: var(--space-4); }
+.admin-portal .quick-actions-title {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  color: var(--color-text-2);
+  margin: 0 0 var(--space-3);
+}
+.admin-portal .quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-3);
+}
+.admin-portal .quick-action-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: var(--color-text-1);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.admin-portal .quick-action-card:hover { border-color: var(--color-primary); transform: translateY(-1px); }
+.admin-portal .quick-action-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-hover);
+  flex-shrink: 0;
+}
+
 /* ============================== Dashboard ============================== */
 .admin-portal .dashboard-chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); align-items: start; }
+.admin-portal .staff-activity-override-badge { margin-left: var(--space-2); }
 
 /* Custom recharts <Tooltip content> (ChartTooltip.jsx) - replaces the
    library's plain default box with something that matches the rest of the

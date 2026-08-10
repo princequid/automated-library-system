@@ -5,6 +5,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import type {
+  AppNotification,
   AppUser,
   CatalogItem,
   DashboardStats,
@@ -126,6 +127,36 @@ export function useWaiveFine() {
     mutationFn: (payload: { id: string; reason: string }) =>
       api.put(`/fines/${payload.id}/waive`, { reason: payload.reason }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['fines'] }),
+  });
+}
+export function useDisputeFine() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { id: string; reason: string }) =>
+      api.post(`/fines/${payload.id}/dispute`, { reason: payload.reason }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['me', 'fines'] }),
+  });
+}
+
+// ---- Notifications ------------------------------------------------------------
+export const useMyNotifications = () =>
+  useQuery({
+    queryKey: ['me', 'notifications'],
+    queryFn: () => get<AppNotification[]>('/notifications/me'),
+    refetchInterval: 30_000,
+  });
+export function useMarkNotificationRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.put(`/notifications/${id}/read`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['me', 'notifications'] }),
+  });
+}
+export function useMarkAllNotificationsRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.put('/notifications/read-all'),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['me', 'notifications'] }),
   });
 }
 

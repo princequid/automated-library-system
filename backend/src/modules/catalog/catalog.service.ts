@@ -58,7 +58,11 @@ class CatalogService {
         take: query.limit,
       }),
       prisma.catalogItem.count({ where }),
-      settingsService.getNumber('loan_period_days'),
+      // Loan period is per-level now (see src/shared/memberLevel.ts) - the
+      // undergraduate figure stays the headline "N-day loan" display value
+      // shown before a viewer's own level is known, same as the single
+      // number this field always showed before that split existed.
+      settingsService.getNumber('loan_period_days_undergraduate'),
     ]);
 
     // Derived field so the frontend never needs a second call to show "14-day loan".
@@ -72,7 +76,7 @@ class CatalogService {
       include: { copies: { orderBy: { barcode: 'asc' } } },
     });
     if (!item) throw new AppError('Catalog item not found', 404);
-    const loanPeriodDays = await settingsService.getNumber('loan_period_days');
+    const loanPeriodDays = await settingsService.getNumber('loan_period_days_undergraduate');
     return { ...item, loan_period_days: loanPeriodDays };
   }
 
@@ -81,18 +85,38 @@ class CatalogService {
       const existing = await prisma.catalogItem.findUnique({ where: { isbn: dto.isbn } });
       if (existing) throw new AppError('A catalog item with this ISBN already exists', 409);
     }
-    return prisma.catalogItem.create({ data: { ...dto, created_by: createdBy } });
+    const { category_ids, ...rest } = dto;
+    return prisma.catalogItem.create({
+      data: {
+        ...rest,
+        created_by: createdBy,
+        categories: category_ids?.length ? { connect: category_ids.map((id) => ({ id })) } : undefined,
+      },
+    });
   }
 
   async update(id: string, dto: UpdateCatalogDto) {
     await this.getById(id);
-    return prisma.catalogItem.update({ where: { id }, data: dto });
+    const { category_ids, ...rest } = dto;
+    return prisma.catalogItem.update({
+      where: { id },
+      data: {
+        ...rest,
+        categories: category_ids ? { set: category_ids.map((id) => ({ id })) } : undefined,
+      },
+    });
   }
 
-  async softDelete(id: string) {
-    const onLoan = await prisma.copy.count({ where: { catalog_item_id: id, status: 'ON_LOAN' } });
-    if (onLoan > 0) {
-      throw new AppError('Cannot delete: one or more copies are currently on loan', 400);
+  // Librarian delete is "Limited" (blocked while any copy is on loan); an
+  // ADMINISTRATOR override (force: true, only reachable via requireLibrarianOrOverride,
+  // so an override_reason is already required and audited) bypasses that check -
+  // the "Full" tier the role-separation spec gives Administrator.
+  async softDelete(id: string, force = false) {
+    if (!force) {
+      const onLoan = await prisma.copy.count({ where: { catalog_item_id: id, status: 'ON_LOAN' } });
+      if (onLoan > 0) {
+        throw new AppError('Cannot delete: one or more copies are currently on loan', 400);
+      }
     }
     await prisma.catalogItem.update({ where: { id }, data: { deleted_at: new Date() } });
   }
@@ -110,22 +134,64 @@ class CatalogService {
   async addCopies(catalogItemId: string, dto: AddCopiesDto) {
     await this.getById(catalogItemId);
     const quantity = dto.quantity ?? 1;
-    const data = Array.from({ length: quantity }, (_, i) => ({
-      catalog_item_id: catalogItemId,
-      barcode: quantity === 1 && dto.barcode ? dto.barcode : generateBarcode(i),
-      condition: dto.condition,
-      status: 'AVAILABLE' as CopyStatus,
-    }));
+    const data = Array.from({ length: quantity }, (_, i) => {
+      const barcode = quantity === 1 && dto.barcode ? dto.barcode : generateBarcode(i);
+      return {
+        catalog_item_id: catalogItemId,
+        barcode,
+        condition: dto.condition,
+        status: 'AVAILABLE' as CopyStatus,
+        qr_payload: barcode,
+      };
+    });
     await prisma.copy.createMany({ data });
     await updateAvailableCopies(catalogItemId);
     return this.listCopies(catalogItemId);
   }
 
-  async updateCopy(copyId: string, dto: UpdateCopyDto) {
+  /**
+   * staffId attributes the auto-opened maintenance ticket / auto-created lost-
+   * book fine this method creates when status transitions to DAMAGED or LOST -
+   * previously these were two disconnected manual actions a librarian had to
+   * remember to do separately (the exact gap the checklist audit flagged).
+   */
+  async updateCopy(copyId: string, dto: UpdateCopyDto, staffId: string) {
     const copy = await prisma.copy.findUnique({ where: { id: copyId } });
     if (!copy) throw new AppError('Copy not found', 404);
     const updated = await prisma.copy.update({ where: { id: copyId }, data: dto });
     await updateAvailableCopies(copy.catalog_item_id);
+
+    if (dto.status === 'DAMAGED' && copy.status !== 'DAMAGED') {
+      const alreadyOpen = await prisma.maintenance.findFirst({
+        where: { copy_id: copyId, status: { in: ['OPEN', 'IN_PROGRESS'] } },
+      });
+      if (!alreadyOpen) {
+        await prisma.maintenance.create({
+          data: { copy_id: copyId, severity: 'MINOR', opened_by: staffId, notes: dto.condition },
+        });
+      }
+    }
+
+    // Only auto-link when the item has a replacement_cost set - otherwise
+    // there's no correct amount to charge, and a $0 fine with no way to edit
+    // it afterward would be worse than leaving this to the existing manual
+    // POST /fines flow (a librarian who knows the real cost enters it there).
+    if (dto.status === 'LOST' && copy.status !== 'LOST') {
+      const item = await prisma.catalogItem.findUnique({ where: { id: copy.catalog_item_id } });
+      const activeLoan = await prisma.loan.findFirst({ where: { copy_id: copyId, returned_at: null } });
+      if (activeLoan && item?.replacement_cost) {
+        await prisma.fine.create({
+          data: {
+            loan_id: activeLoan.id,
+            user_id: activeLoan.user_id,
+            amount: new Prisma.Decimal(Number(item.replacement_cost).toFixed(2)),
+            reason: `Lost book - replacement cost (${item.title})`,
+          },
+        });
+        await prisma.loan.update({ where: { id: activeLoan.id }, data: { returned_at: new Date() } });
+      }
+    }
+
     return updated;
   }
 

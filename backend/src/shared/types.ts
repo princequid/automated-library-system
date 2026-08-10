@@ -23,6 +23,12 @@ declare global {
   namespace Express {
     interface Request {
       user?: AuthUser;
+      // Set by requireLibrarianOrOverride() when an ADMINISTRATOR uses the
+      // override path on a Librarian-owned operational endpoint. Read by
+      // middleware/auditLog.ts and persisted onto AuditLog.is_override/
+      // override_reason.
+      isOverride?: boolean;
+      overrideReason?: string;
     }
     interface Locals {
       audit?: AuditSnapshot;

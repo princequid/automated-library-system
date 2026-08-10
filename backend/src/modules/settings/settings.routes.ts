@@ -19,7 +19,7 @@ router.use(authenticate);
  *       403: { description: Forbidden }
  *   put:
  *     tags: [Settings]
- *     summary: Bulk-update settings, changed keys only (SUPER_ADMIN)
+ *     summary: Bulk-update settings, changed keys only (ADMINISTRATOR)
  *     requestBody:
  *       required: true
  *       content:
@@ -38,7 +38,7 @@ router.use(authenticate);
  *       422: { description: Type mismatch }
  */
 router.get('/', requireAtLeast('LIBRARIAN'), asyncHandler(settingsController.list));
-router.put('/', requireRole('SUPER_ADMIN'), asyncHandler(settingsController.setMany));
+router.put('/', requireRole('ADMINISTRATOR'), asyncHandler(settingsController.setMany));
 
 /**
  * @swagger
@@ -51,13 +51,13 @@ router.put('/', requireRole('SUPER_ADMIN'), asyncHandler(settingsController.setM
  *       200: { description: The setting value }
  *   put:
  *     tags: [Settings]
- *     summary: Update one setting (SUPER_ADMIN)
+ *     summary: Update one setting (ADMINISTRATOR)
  *     parameters: [{ in: path, name: key, required: true, schema: { type: string } }]
  *     responses:
  *       200: { description: Updated }
  *       403: { description: Forbidden }
  */
 router.get('/:key', requireAtLeast('LIBRARIAN'), asyncHandler(settingsController.getOne));
-router.put('/:key', requireRole('SUPER_ADMIN'), asyncHandler(settingsController.setOne));
+router.put('/:key', requireRole('ADMINISTRATOR'), asyncHandler(settingsController.setOne));
 
 export const settingsRoutes = router;

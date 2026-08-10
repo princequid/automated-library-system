@@ -4,6 +4,7 @@ const mockPrisma = {
   user: { findUnique: jest.fn() },
 };
 jest.mock('../../config/database', () => ({ prisma: mockPrisma }));
+jest.mock('../notifications/notifications.service', () => ({ notificationsService: { notify: jest.fn() } }));
 
 import { finesService } from './fines.service';
 

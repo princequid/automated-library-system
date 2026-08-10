@@ -6,37 +6,58 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { addDays, subDays } from 'date-fns';
+import { backfillCatalogEntities } from './backfill';
 
 const prisma = new PrismaClient();
 const COST = 12;
 
-// Setting defaults - the single source of truth lives here.
+// Setting defaults - the single source of truth lives here. Loan period, max
+// renewals, loan limit and fine rate are all per MemberLevel tier now (see
+// src/shared/memberLevel.ts) - there is no more global loan_period_days /
+// max_renewals, since that was exactly the "borrowing policies aren't really
+// per-level" gap the checklist audit flagged.
 const SETTINGS: { key: string; value: string; type: string; description: string }[] = [
   { key: 'fine_rate_undergraduate', value: '0.50', type: 'number', description: 'Daily fine (GHS) for undergraduates' },
   { key: 'fine_rate_postgraduate', value: '0.75', type: 'number', description: 'Daily fine (GHS) for postgraduates' },
+  { key: 'fine_rate_lecturer', value: '1.00', type: 'number', description: 'Daily fine (GHS) for lecturers' },
   { key: 'fine_max_cap_ghs', value: '20.00', type: 'number', description: 'Maximum fine per overdue loan (GHS)' },
   { key: 'fine_grace_period_days', value: '0', type: 'number', description: 'Grace days before fines accrue' },
   { key: 'fine_blocking_threshold_ghs', value: '10.00', type: 'number', description: 'Outstanding fines that block borrowing (GHS)' },
   { key: 'loan_limit_undergraduate', value: '5', type: 'number', description: 'Concurrent loan limit for undergraduates' },
   { key: 'loan_limit_postgraduate', value: '8', type: 'number', description: 'Concurrent loan limit for postgraduates' },
-  { key: 'loan_period_days', value: '14', type: 'number', description: 'Standard loan length in days' },
-  { key: 'max_renewals', value: '2', type: 'number', description: 'Maximum renewals per loan' },
+  { key: 'loan_limit_lecturer', value: '15', type: 'number', description: 'Concurrent loan limit for lecturers' },
+  { key: 'loan_period_days_undergraduate', value: '14', type: 'number', description: 'Loan length (days) for undergraduates' },
+  { key: 'loan_period_days_postgraduate', value: '30', type: 'number', description: 'Loan length (days) for postgraduates' },
+  { key: 'loan_period_days_lecturer', value: '60', type: 'number', description: 'Loan length (days) for lecturers' },
+  { key: 'max_renewals_undergraduate', value: '2', type: 'number', description: 'Maximum renewals per loan for undergraduates' },
+  { key: 'max_renewals_postgraduate', value: '2', type: 'number', description: 'Maximum renewals per loan for postgraduates' },
+  { key: 'max_renewals_lecturer', value: '3', type: 'number', description: 'Maximum renewals per loan for lecturers' },
   { key: 'hold_pickup_deadline_days', value: '5', type: 'number', description: 'Days a ready hold is held before expiring' },
   { key: 'self_service_borrowing_enabled', value: 'true', type: 'boolean', description: 'Master switch for the student self-borrow button' },
 ];
 
 const STAFF = [
-  { name: 'System Administrator', email: 'admin@university.edu', role: 'SUPER_ADMIN' as const, password: 'Admin@1234' },
+  { name: 'System Administrator', email: 'admin@university.edu', role: 'ADMINISTRATOR' as const, password: 'Admin@1234' },
   { name: 'Head Librarian', email: 'librarian@university.edu', role: 'LIBRARIAN' as const, password: 'Library@123' },
-  { name: 'Front Desk Staff', email: 'desk@university.edu', role: 'DESK_STAFF' as const, password: 'Desk@1234' },
+  { name: 'Front Desk Librarian', email: 'desk@university.edu', role: 'LIBRARIAN' as const, password: 'Desk@1234' },
 ];
 
-const STUDENTS = [
+const STUDENTS: {
+  name: string;
+  email: string;
+  student_id: string;
+  department: string;
+  year_of_study: number;
+  member_level?: 'UNDERGRADUATE' | 'POSTGRADUATE' | 'LECTURER';
+}[] = [
   { name: 'Ama Mensah', email: 'ama.mensah@st.university.edu', student_id: '20210045', department: 'Computer Science', year_of_study: 2 },
   { name: 'Kofi Boateng', email: 'kofi.boateng@st.university.edu', student_id: '20210046', department: 'Electrical Engineering', year_of_study: 3 },
   { name: 'Efua Owusu', email: 'efua.owusu@st.university.edu', student_id: '20210047', department: 'Computer Science', year_of_study: 6 },
   { name: 'Yaw Darko', email: 'yaw.darko@st.university.edu', student_id: '20210048', department: 'Mechanical Engineering', year_of_study: 1 },
   { name: 'Adjoa Asante', email: 'adjoa.asante@st.university.edu', student_id: '20210049', department: 'Computer Science', year_of_study: 4 },
+  // Explicit member_level demo account - a lecturer can never be inferred from
+  // year_of_study, so this is the one seeded row that exercises that path.
+  { name: 'Dr. Kwame Nkrumah', email: 'kwame.nkrumah@st.university.edu', student_id: '20210050', department: 'Computer Science', year_of_study: 0, member_level: 'LECTURER' },
 ];
 
 const BOOKS = [
@@ -53,13 +74,25 @@ const BOOKS = [
 ];
 
 async function reset(): Promise<void> {
-  // Order matters because of FKs.
+  // Order matters because of FKs - children before parents.
+  await prisma.notification.deleteMany();
+  await prisma.inventoryScan.deleteMany();
+  await prisma.inventorySession.deleteMany();
+  await prisma.maintenance.deleteMany();
+  await prisma.acquisition.deleteMany();
   await prisma.auditLog.deleteMany();
   await prisma.fine.deleteMany();
   await prisma.reservation.deleteMany();
   await prisma.loan.deleteMany();
   await prisma.copy.deleteMany();
   await prisma.catalogItem.deleteMany();
+  await prisma.category.deleteMany();
+  await prisma.author.deleteMany();
+  await prisma.publisher.deleteMany();
+  await prisma.shelf.deleteMany();
+  await prisma.section.deleteMany();
+  await prisma.floor.deleteMany();
+  await prisma.library.deleteMany();
   await prisma.setting.deleteMany();
   await prisma.user.deleteMany();
 }
@@ -90,6 +123,7 @@ async function main(): Promise<void> {
         student_id: st.student_id,
         department: st.department,
         year_of_study: st.year_of_study,
+        member_level: st.member_level,
         role: 'STUDENT',
         password_hash: await bcrypt.hash('Student@123', COST),
       },
@@ -180,6 +214,9 @@ async function main(): Promise<void> {
   await prisma.fine.create({
     data: { user_id: amaStudent.id, amount: new Prisma.Decimal('12.50'), reason: 'Damaged book - water damage' },
   });
+
+  // ---- Entity backfill (authors/publishers/categories/locations) -----------
+  await backfillCatalogEntities(prisma);
 
   // ---- Login table ----------------------------------------------------------
   console.log('\nSeed complete. Use any of these logins:\n');

@@ -5,6 +5,7 @@
 // borrower, in that order.
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '@/store/auth.store';
 import { apiErrorMessage } from '@/lib/api';
 import { catalogService } from '../../services/catalogService';
 import { membersService } from '../../services/membersService';
@@ -12,16 +13,23 @@ import { circulationService } from '../../services/circulationService';
 import { TableCard } from '../../components/common/TableCard';
 import { SearchBar } from '../../components/common/SearchBar';
 import { Button } from '../../components/common/Button';
+import { FormField } from '../../components/common/FormField';
 import { LoadingState } from '../../components/common/LoadingState';
 import { EmptyState } from '../../components/common/EmptyState';
 import { useToast } from '../../components/common/Toast';
 
+// Issuing is normally a Librarian action (requireLibrarianOrOverride() on the
+// backend) - an Administrator can still do it, but only with a reason, which
+// is recorded on the audit log as an override.
 export function IssuePanel() {
+  const { user } = useAuthStore();
+  const isAdministrator = user?.role === 'ADMINISTRATOR';
   const [titleQuery, setTitleQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedCopyId, setSelectedCopyId] = useState(null);
   const [memberQuery, setMemberQuery] = useState('');
   const [selectedMember, setSelectedMember] = useState(null);
+  const [overrideReason, setOverrideReason] = useState('');
   const queryClient = useQueryClient();
   const toast = useToast();
 
@@ -44,7 +52,12 @@ export function IssuePanel() {
   });
 
   const issue = useMutation({
-    mutationFn: () => circulationService.issue({ copy_id: selectedCopyId, user_id: selectedMember.id }),
+    mutationFn: () =>
+      circulationService.issue({
+        copy_id: selectedCopyId,
+        user_id: selectedMember.id,
+        ...(isAdministrator ? { override_reason: overrideReason.trim() } : {}),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['circulation', 'loans'] });
       queryClient.invalidateQueries({ queryKey: ['catalog', 'items'] });
@@ -60,6 +73,7 @@ export function IssuePanel() {
     setSelectedCopyId(null);
     setMemberQuery('');
     setSelectedMember(null);
+    setOverrideReason('');
   }
 
   const availableCopies = (copiesQuery.data?.data ?? []).filter((c) => c.status === 'AVAILABLE');
@@ -151,10 +165,18 @@ export function IssuePanel() {
         </div>
       </div>
 
+      {isAdministrator && (
+        <FormField label="Override reason" required hint="Issuing is normally a Librarian action - required for the audit trail.">
+          {(props) => (
+            <input {...props} value={overrideReason} onChange={(e) => setOverrideReason(e.target.value)} placeholder="Why is this being done by an Administrator?" />
+          )}
+        </FormField>
+      )}
+
       <Button
         onClick={() => issue.mutate()}
         loading={issue.isPending}
-        disabled={!selectedCopyId || !selectedMember}
+        disabled={!selectedCopyId || !selectedMember || (isAdministrator && !overrideReason.trim())}
         className="circulation-issue-submit"
       >
         Issue book

@@ -28,6 +28,8 @@ export function auditLog(req: Request, res: Response, next: NextFunction): void 
           entity_id: snapshot?.entityId,
           before: (snapshot?.before ?? undefined) as never,
           after: (snapshot?.after ?? undefined) as never,
+          is_override: req.isOverride ?? false,
+          override_reason: req.overrideReason ?? null,
         },
       })
       .catch((err) => logger.error(`Failed to write audit log: ${(err as Error).message}`));

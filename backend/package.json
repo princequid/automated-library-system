@@ -15,7 +15,12 @@
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
   },
-  "keywords": ["library", "alms", "express", "prisma"],
+  "keywords": [
+    "library",
+    "alms",
+    "express",
+    "prisma"
+  ],
   "license": "MIT",
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -31,6 +36,8 @@
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
     "node-cron": "^3.0.3",
+    "nodemailer": "^9.0.5",
+    "qrcode": "^1.5.4",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "winston": "^3.15.0",
@@ -47,6 +54,8 @@
     "@types/multer": "^1.4.12",
     "@types/node": "^20.17.6",
     "@types/node-cron": "^3.0.11",
+    "@types/nodemailer": "^8.0.1",
+    "@types/qrcode": "^1.5.6",
     "@types/supertest": "^6.0.2",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.7",

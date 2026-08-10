@@ -3,7 +3,7 @@
 // the real boundary - hiding a button never grants or denies access on its own.
 import type { UserRole } from '@/store/auth.store';
 
-const ORDER: UserRole[] = ['STUDENT', 'DESK_STAFF', 'LIBRARIAN', 'SENIOR_LIBRARIAN', 'SUPER_ADMIN'];
+const ORDER: UserRole[] = ['STUDENT', 'LIBRARIAN', 'ADMINISTRATOR'];
 
 export function rankAtLeast(role: UserRole | undefined | null, minimum: UserRole): boolean {
   if (!role) return false;

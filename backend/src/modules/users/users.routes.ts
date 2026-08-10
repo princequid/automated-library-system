@@ -6,7 +6,7 @@ import { requireRole, requireAtLeast } from '../../middleware/rbac';
 import { validateBody, validateQuery } from '../../middleware/validate';
 import { asyncHandler } from '../../shared/asyncHandler';
 import { upload } from '../../shared/upload';
-import { createUserSchema, listUsersQuery, updateStatusSchema, updateUserSchema } from './dto/user.dto';
+import { createUserSchema, listUsersQuery, updateRoleSchema, updateStatusSchema, updateUserSchema } from './dto/user.dto';
 
 const router = Router();
 router.use(authenticate);
@@ -43,14 +43,14 @@ router.get('/me/eligibility', asyncHandler(usersController.myEligibility));
  *       403: { description: Forbidden }
  *   post:
  *     tags: [Users]
- *     summary: Create a staff or student account (SUPER_ADMIN). Returns a one-time temp password.
+ *     summary: Create a staff or student account (ADMINISTRATOR only). Returns a one-time temp password.
  *     responses:
  *       201: { description: Created; body includes tempPassword shown once }
  *       403: { description: Forbidden }
  *       409: { description: Duplicate email or student ID }
  */
 router.get('/', requireAtLeast('LIBRARIAN'), validateQuery(listUsersQuery), asyncHandler(usersController.list));
-router.post('/', requireRole('SUPER_ADMIN'), validateBody(createUserSchema), asyncHandler(usersController.create));
+router.post('/', requireRole('ADMINISTRATOR'), validateBody(createUserSchema), asyncHandler(usersController.create));
 
 /**
  * @swagger
@@ -90,7 +90,7 @@ router.put('/:id', requireAtLeast('LIBRARIAN'), validateBody(updateUserSchema), 
  * /users/{id}/status:
  *   put:
  *     tags: [Users]
- *     summary: Change account status with a required reason (SENIOR_LIBRARIAN+)
+ *     summary: Change account status with a required reason (ADMINISTRATOR only)
  *     parameters: [{ in: path, name: id, required: true, schema: { type: string } }]
  *     responses:
  *       200: { description: Status updated }
@@ -98,9 +98,28 @@ router.put('/:id', requireAtLeast('LIBRARIAN'), validateBody(updateUserSchema), 
  */
 router.put(
   '/:id/status',
-  requireAtLeast('SENIOR_LIBRARIAN'),
+  requireRole('ADMINISTRATOR'),
   validateBody(updateStatusSchema),
   asyncHandler(usersController.updateStatus)
+);
+
+/**
+ * @swagger
+ * /users/{id}/role:
+ *   put:
+ *     tags: [Users]
+ *     summary: Reassign a user's role - Roles & Permissions (ADMINISTRATOR only)
+ *     parameters: [{ in: path, name: id, required: true, schema: { type: string } }]
+ *     responses:
+ *       200: { description: Role updated }
+ *       403: { description: Forbidden }
+ *       409: { description: Would leave the system with no Administrator }
+ */
+router.put(
+  '/:id/role',
+  requireRole('ADMINISTRATOR'),
+  validateBody(updateRoleSchema),
+  asyncHandler(usersController.updateRole)
 );
 
 /**
@@ -108,7 +127,7 @@ router.put(
  * /users/{id}/eligibility:
  *   get:
  *     tags: [Users]
- *     summary: Borrowing eligibility for a user (DESK_STAFF+ or self)
+ *     summary: Borrowing eligibility for a user (LIBRARIAN+ or self)
  *     parameters: [{ in: path, name: id, required: true, schema: { type: string } }]
  *     responses:
  *       200: { description: Eligibility result }

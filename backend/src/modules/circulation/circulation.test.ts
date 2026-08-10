@@ -4,7 +4,8 @@ const mockPrisma: any = {
   copy: { findUnique: jest.fn(), update: jest.fn() },
   loan: { create: jest.fn(), findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
   fine: { create: jest.fn() },
-  reservation: { count: jest.fn() },
+  reservation: { count: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
+  user: { findUnique: jest.fn().mockResolvedValue({ id: 'stu-1', year_of_study: 2, member_level: null }) },
   $transaction: jest.fn(async (cb: (tx: unknown) => Promise<unknown>) =>
     typeof cb === 'function' ? cb(mockPrisma) : Promise.all(cb as never)
   ),
@@ -19,15 +20,22 @@ jest.mock('./eligibility.service', () => ({ checkEligibility: (...a: unknown[]) 
 
 jest.mock('../catalog/catalog.service', () => ({ updateAvailableCopies: jest.fn() }));
 jest.mock('../reservations/reservations.service', () => ({ promoteQueue: jest.fn() }));
+jest.mock('../notifications/notifications.service', () => ({ notificationsService: { notify: jest.fn() } }));
 
 import { circulationService } from './circulation.service';
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockPrisma.user.findUnique.mockResolvedValue({ id: 'stu-1', year_of_study: 2, member_level: null });
+  mockPrisma.reservation.findFirst.mockResolvedValue(null);
   mockSettings.getNumber.mockImplementation(async (k: string) => {
     const map: Record<string, number> = {
-      loan_period_days: 14,
-      max_renewals: 2,
+      loan_period_days_undergraduate: 14,
+      loan_period_days_postgraduate: 30,
+      loan_period_days_lecturer: 60,
+      max_renewals_undergraduate: 2,
+      max_renewals_postgraduate: 2,
+      max_renewals_lecturer: 3,
       fine_rate_undergraduate: 0.5,
       fine_max_cap_ghs: 20,
     };
@@ -96,6 +104,7 @@ describe('renew', () => {
       returned_at: null,
       renewal_count: 2,
       copy: { catalog_item_id: 'c1' },
+      user: { year_of_study: 2, member_level: null },
     });
     await expect(circulationService.renew('loan-1', { id: 'stu-1', role: 'STUDENT' })).rejects.toMatchObject({
       statusCode: 400,
@@ -109,6 +118,7 @@ describe('renew', () => {
       returned_at: null,
       renewal_count: 0,
       copy: { catalog_item_id: 'c1' },
+      user: { year_of_study: 2, member_level: null },
     });
     mockPrisma.reservation.count.mockResolvedValue(1);
     await expect(circulationService.renew('loan-1', { id: 'stu-1', role: 'STUDENT' })).rejects.toMatchObject({

@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { analyticsController } from './analytics.controller';
 import { authenticate } from '../../middleware/auth';
-import { requireAtLeast } from '../../middleware/rbac';
+import { requireAtLeast, requireRole } from '../../middleware/rbac';
 import { asyncHandler } from '../../shared/asyncHandler';
 
 const router = Router();
@@ -80,5 +80,28 @@ router.get('/fine-collection', asyncHandler(analyticsController.fineCollection))
  *     responses: { 200: { description: Recent activity } }
  */
 router.get('/recent-activity', asyncHandler(analyticsController.recentActivity));
+
+/**
+ * @swagger
+ * /analytics/staff-activity:
+ *   get:
+ *     tags: [Analytics]
+ *     summary: Action counts per staff member, including override actions (ADMINISTRATOR only)
+ *     parameters:
+ *       - { in: query, name: from, schema: { type: string, format: date } }
+ *       - { in: query, name: to, schema: { type: string, format: date } }
+ *     responses: { 200: { description: Per-actor activity counts } }
+ */
+router.get('/staff-activity', requireRole('ADMINISTRATOR'), asyncHandler(analyticsController.staffActivity));
+
+/**
+ * @swagger
+ * /analytics/acquisition-expenditure:
+ *   get:
+ *     tags: [Analytics]
+ *     summary: Total spend on received acquisitions plus pending request count (ADMINISTRATOR only)
+ *     responses: { 200: { description: Expenditure summary } }
+ */
+router.get('/acquisition-expenditure', requireRole('ADMINISTRATOR'), asyncHandler(analyticsController.acquisitionExpenditure));
 
 export const analyticsRoutes = router;
