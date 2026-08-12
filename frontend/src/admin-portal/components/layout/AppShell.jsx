@@ -39,6 +39,7 @@ function AppShellInner() {
                       on mount, rather than the swap from the loader (or from
                       the previous page) landing as an instant pop-in. */}
                   <motion.div
+                    className="route-transition"
                     key={location.pathname}
                     initial={reduceMotion ? undefined : { opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}

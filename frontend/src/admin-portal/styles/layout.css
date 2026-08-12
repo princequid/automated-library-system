@@ -289,6 +289,16 @@
   flex-direction: column;
   gap: var(--space-6);
 }
+/* The route's fade-in wrapper (AppShell.jsx's <motion.div>) sits between
+   .admin-shell-content and a page's own top-level sections (PageHeader, KPI
+   grids, TableCard...) - without repeating the same flex/gap here, those
+   sections lose the spacing they used to get as direct flex children of
+   .admin-shell-content and collapse flush against each other. */
+.admin-portal .route-transition {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
 
 /* ============================== PageHeader ============================== */
 .admin-portal .page-header {

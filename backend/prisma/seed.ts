@@ -204,6 +204,37 @@ async function main(): Promise<void> {
   // ---- Entity backfill (authors/publishers/categories/locations) -----------
   await backfillCatalogEntities(prisma);
 
+  // ---- Additional floors (Floor 2, Floor 3) ---------------------------------
+  // backfillCatalogEntities only ever creates "Floor 1" (derived from each
+  // book's shelf_location string) - these two are pure structural reference
+  // data, so the Locations page demos a real multi-floor library even though
+  // no catalog item is shelved on them yet (exactly the kind of empty
+  // structure a librarian sets up ahead of stocking it, via the same
+  // Add-a-floor/section/shelf rows on that page).
+  const mainLibrary = await prisma.library.findUniqueOrThrow({ where: { name: 'Main Library' } });
+
+  const floor2 = await prisma.floor.create({ data: { library_id: mainLibrary.id, name: 'Floor 2' } });
+  const floor2Math = await prisma.section.create({ data: { floor_id: floor2.id, name: 'MATH A' } });
+  await prisma.shelf.createMany({
+    data: [
+      { section_id: floor2Math.id, name: 'MATH-A-01' },
+      { section_id: floor2Math.id, name: 'MATH-A-02' },
+    ],
+  });
+  const floor2Phy = await prisma.section.create({ data: { floor_id: floor2.id, name: 'PHY A' } });
+  await prisma.shelf.create({ data: { section_id: floor2Phy.id, name: 'PHY-A-01' } });
+
+  const floor3 = await prisma.floor.create({ data: { library_id: mainLibrary.id, name: 'Floor 3' } });
+  const floor3Gen = await prisma.section.create({ data: { floor_id: floor3.id, name: 'GEN A' } });
+  await prisma.shelf.createMany({
+    data: [
+      { section_id: floor3Gen.id, name: 'GEN-A-01' },
+      { section_id: floor3Gen.id, name: 'GEN-A-02' },
+    ],
+  });
+  const floor3Ref = await prisma.section.create({ data: { floor_id: floor3.id, name: 'REF A' } });
+  await prisma.shelf.create({ data: { section_id: floor3Ref.id, name: 'REF-A-01' } });
+
   // ---- Login table ----------------------------------------------------------
   console.log('\nSeed complete. Use any of these logins:\n');
   const pad = (s: string, n: number) => s.padEnd(n);
