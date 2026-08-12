@@ -24,7 +24,12 @@ services:
     env: node
     plan: free
     rootDir: backend
-    buildCommand: npm install && npm run build
+    # --include=dev is required here: NODE_ENV=production is set below (and
+    # applies during the build too, not just at runtime), which makes plain
+    # `npm install` skip devDependencies - silently dropping `typescript`
+    # (needed by `npm run build`'s tsc) and the `prisma` CLI (needed by the
+    # postinstall hook's `prisma generate`), breaking the build.
+    buildCommand: npm install --include=dev && npm run build
     # prisma migrate deploy applies any pending migrations (safe, additive -
     # never a `db push --force-reset`) before the server starts on every
     # deploy and every restart.
