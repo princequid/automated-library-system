@@ -40,12 +40,6 @@ enum ResStatus {
   CANCELLED
 }
 
-enum MemberLevel {
-  UNDERGRADUATE
-  POSTGRADUATE
-  LECTURER
-}
-
 enum MaintenanceSeverity {
   MINOR
   MAJOR
@@ -79,11 +73,6 @@ model User {
   name          String
   department    String?
   year_of_study Int?
-  // Explicit borrowing-policy tier. When unset, resolveMemberLevel() falls back
-  // to the year_of_study >= 5 heuristic (undergraduate/postgraduate only - a
-  // lecturer can never be inferred, so this must be set explicitly for staff
-  // who borrow as lecturers). See src/shared/memberLevel.ts.
-  member_level  MemberLevel?
   role          UserRole     @default(STUDENT)
   status        UserStatus   @default(ACTIVE)
   // password_hash is required for ALL roles, including STUDENT.

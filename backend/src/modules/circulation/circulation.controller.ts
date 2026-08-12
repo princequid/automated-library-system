@@ -17,14 +17,6 @@ export const circulationController = {
     sendCreated(res, loan, 'Book issued');
   },
 
-  async selfBorrow(req: Request, res: Response): Promise<void> {
-    const student = requireUser(req);
-    // user_id is ALWAYS the authenticated student - never read from the body.
-    const loan = await circulationService.selfBorrow(req.body.copy_id, student.id);
-    res.locals.audit = { entityType: 'Loan', entityId: loan?.id, after: loan };
-    sendCreated(res, loan, 'Borrowed successfully');
-  },
-
   async returnBook(req: Request, res: Response): Promise<void> {
     requireUser(req);
     const result = await circulationService.returnByBarcode(req.body.barcode);

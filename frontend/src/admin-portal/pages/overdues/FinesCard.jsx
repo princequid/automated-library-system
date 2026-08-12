@@ -1,9 +1,12 @@
 // src/admin-portal/pages/overdues/FinesCard.jsx
+// This page is LIBRARIAN-only (see constants/nav.js) - an ADMINISTRATOR can
+// never reach it, so waive/record-payment render unconditionally here. The
+// backend still allows an audited Administrator override via
+// requireLibrarianOrOverride(), but that's an API-only emergency path with
+// deliberately no UI.
 import { useMemo, useState } from 'react';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '@/store/auth.store';
-import { rankAtLeast } from '@/lib/roles';
 import { apiErrorMessage } from '@/lib/api';
 import { finesService } from '../../services/finesService';
 import { TableCard } from '../../components/common/TableCard';
@@ -14,7 +17,6 @@ import { RowActions } from '../../components/common/RowActions';
 import { Badge } from '../../components/common/Badge';
 import { useToast } from '../../components/common/Toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { OverrideReasonModal } from '../../components/common/OverrideReasonModal';
 import { BulkWaiveModal } from './BulkWaiveModal';
 import { WaiveFineModal } from './WaiveFineModal';
 
@@ -40,22 +42,14 @@ function useFinePillCounts() {
 
 export function FinesCard() {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
-  // waive/pay-manual are requireLibrarianOrOverride() on the backend - both
-  // roles reach these, but ADMINISTRATOR must supply an override_reason.
-  const canWaive = rankAtLeast(user?.role, 'LIBRARIAN');
-  const canRecordPayment = rankAtLeast(user?.role, 'LIBRARIAN');
-  const isAdministrator = user?.role === 'ADMINISTRATOR';
   const queryClient = useQueryClient();
   const toast = useToast();
 
   const payManual = useMutation({
-    mutationFn: ({ id, overrideReason }) =>
-      finesService.payManual(id, overrideReason ? { override_reason: overrideReason } : undefined),
+    mutationFn: (id) => finesService.payManual(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fines'] });
       toast.success('Payment recorded.');
-      setOverridingPayment(null);
     },
     onError: (err) => toast.error(apiErrorMessage(err, 'Could not record this payment.')),
   });
@@ -65,7 +59,6 @@ export function FinesCard() {
   const [selected, setSelected] = useState(new Set());
   const [bulkOpen, setBulkOpen] = useState(false);
   const [waivingFine, setWaivingFine] = useState(null);
-  const [overridingPayment, setOverridingPayment] = useState(null);
 
   const counts = useFinePillCounts();
   const pillOptions = PILLS.map((p) => ({ key: p.key, label: p.label, count: counts[p.key] }));
@@ -125,12 +118,9 @@ export function FinesCard() {
         render: (row) => {
           const unresolved = !row.paid && !row.waived;
           const menuItems = [];
-          if (canWaive && unresolved) menuItems.push({ label: 'Waive', onClick: () => setWaivingFine(row) });
-          if (canRecordPayment && unresolved && !row.disputed) {
-            menuItems.push({
-              label: 'Record payment',
-              onClick: () => (isAdministrator ? setOverridingPayment(row) : payManual.mutate({ id: row.id })),
-            });
+          if (unresolved) menuItems.push({ label: 'Waive', onClick: () => setWaivingFine(row) });
+          if (unresolved && !row.disputed) {
+            menuItems.push({ label: 'Record payment', onClick: () => payManual.mutate(row.id) });
           }
           return <RowActions onView={() => openFine(row)} menuItems={menuItems} />;
         },
@@ -138,7 +128,7 @@ export function FinesCard() {
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [canWaive, canRecordPayment, isAdministrator]
+    []
   );
 
   const selectedFines = allFines.filter((f) => selected.has(f.id));
@@ -149,7 +139,7 @@ export function FinesCard() {
         <FilterPills options={pillOptions} active={filter} onChange={(key) => { setFilter(key); setPage(1); setSelected(new Set()); }} />
         <div className="fines-toolbar-row">
           <p className="filter-results-count">{allFines.length} results</p>
-          {canWaive && selected.size > 0 && (
+          {selected.size > 0 && (
             <Button size="sm" onClick={() => setBulkOpen(true)}>
               Waive {selected.size} selected
             </Button>
@@ -169,58 +159,36 @@ export function FinesCard() {
         page={page}
         pageSize={PAGE_SIZE}
         onPageChange={setPage}
-        selection={
-          canWaive
-            ? {
-                selected,
-                onToggle: (id) =>
-                  setSelected((prev) => {
-                    const next = new Set(prev);
-                    next.has(id) ? next.delete(id) : next.add(id);
-                    return next;
-                  }),
-                onToggleAll: (ids) =>
-                  setSelected((prev) => {
-                    const allSelected = ids.every((id) => prev.has(id));
-                    if (allSelected) {
-                      const next = new Set(prev);
-                      ids.forEach((id) => next.delete(id));
-                      return next;
-                    }
-                    return new Set([...prev, ...ids]);
-                  }),
+        selection={{
+          selected,
+          onToggle: (id) =>
+            setSelected((prev) => {
+              const next = new Set(prev);
+              next.has(id) ? next.delete(id) : next.add(id);
+              return next;
+            }),
+          onToggleAll: (ids) =>
+            setSelected((prev) => {
+              const allSelected = ids.every((id) => prev.has(id));
+              if (allSelected) {
+                const next = new Set(prev);
+                ids.forEach((id) => next.delete(id));
+                return next;
               }
-            : undefined
-        }
+              return new Set([...prev, ...ids]);
+            }),
+        }}
       />
 
-      {canWaive && (
-        <>
-          <BulkWaiveModal
-            open={bulkOpen}
-            onClose={() => {
-              setBulkOpen(false);
-              setSelected(new Set());
-            }}
-            fines={selectedFines}
-          />
-          <WaiveFineModal open={!!waivingFine} onClose={() => setWaivingFine(null)} fine={waivingFine} />
-        </>
-      )}
-
-      {canRecordPayment && isAdministrator && (
-        <OverrideReasonModal
-          open={!!overridingPayment}
-          onClose={() => setOverridingPayment(null)}
-          title="Record payment"
-          description={
-            overridingPayment &&
-            `Recording GHS ${Number(overridingPayment.amount).toFixed(2)} as paid for ${overridingPayment.user.name}. This is normally a Librarian action, so the reason is recorded as an override.`
-          }
-          onConfirm={(reason) => payManual.mutate({ id: overridingPayment.id, overrideReason: reason })}
-          loading={payManual.isPending}
-        />
-      )}
+      <BulkWaiveModal
+        open={bulkOpen}
+        onClose={() => {
+          setBulkOpen(false);
+          setSelected(new Set());
+        }}
+        fines={selectedFines}
+      />
+      <WaiveFineModal open={!!waivingFine} onClose={() => setWaivingFine(null)} fine={waivingFine} />
     </TableCard>
   );
 }

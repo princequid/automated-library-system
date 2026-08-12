@@ -7,11 +7,10 @@ import { PageTransition } from '@/components/ui/page-transition';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { SkeletonList } from '@/components/ui/skeleton';
 import { EmptyState, ErrorState } from '@/components/ui/states';
 import { Tooltip } from '@/components/ui/tooltip';
-import { BookCover, DueBadge, PageHeader } from '@/components/shared';
+import { BookCover, DueBadge, PageHeader, ReservationStatusCard } from '@/components/shared';
 import { toast } from '@/components/ui/toast';
 import { useMyLoans, useMyReservations, useRenewLoan, useCancelReservation } from '@/hooks/api';
 import { apiErrorMessage } from '@/lib/api';
@@ -29,6 +28,11 @@ export function MyLoansPage() {
 
   const active = (loans.data ?? []).filter((l) => !l.returned_at);
   const history = (loans.data ?? []).filter((l) => l.returned_at);
+  // Live = still worth showing here; COLLECTED became a Loan (shows in Active/
+  // History instead) and CANCELLED is gone, so both are excluded.
+  const liveReservations = (reservations.data ?? []).filter(
+    (r) => r.status === 'WAITING' || r.status === 'READY' || r.status === 'EXPIRED'
+  );
 
   const historyByMonth = useMemo(() => {
     const groups: Record<string, Loan[]> = {};
@@ -62,12 +66,12 @@ export function MyLoansPage() {
       <PageHeader title="My loans" />
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
-        <TabsList className="mb-5">
+        <TabsList className="mb-5 overflow-x-auto whitespace-nowrap">
           <TabsTrigger value="active" active={tab === 'active'} layoutGroup="loans-tab">
             Active ({active.length})
           </TabsTrigger>
           <TabsTrigger value="reserved" active={tab === 'reserved'} layoutGroup="loans-tab">
-            Reserved ({(reservations.data ?? []).length})
+            Reserved ({liveReservations.length})
           </TabsTrigger>
           <TabsTrigger value="history" active={tab === 'history'} layoutGroup="loans-tab">
             History
@@ -87,7 +91,7 @@ export function MyLoansPage() {
               {active.map((loan) => {
                 const renewable = loan.renewal_count < 2; // UI hint; backend is the source of truth
                 return (
-                  <Card key={loan.id} className="flex items-center gap-4 p-3">
+                  <Card key={loan.id} className="flex flex-wrap items-center gap-3 p-3 sm:flex-nowrap sm:gap-4">
                     <div className="h-16 w-11 shrink-0">
                       <BookCover item={loan.copy!.catalog_item} />
                     </div>
@@ -124,27 +128,12 @@ export function MyLoansPage() {
             <SkeletonList rows={2} cols={3} />
           ) : reservations.isError ? (
             <ErrorState onRetry={() => reservations.refetch()} />
-          ) : (reservations.data ?? []).length === 0 ? (
-            <EmptyState title="No reservations" description="Reserve unavailable titles to join the queue." />
+          ) : liveReservations.length === 0 ? (
+            <EmptyState title="No requests" description="Borrow a title to reserve or queue for it." />
           ) : (
             <div className="space-y-2">
-              {reservations.data!.map((res) => (
-                <Card key={res.id} className="flex items-center gap-4 p-4">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-text-primary">{res.catalog_item?.title}</p>
-                    <p className="truncate text-xs text-text-secondary">{res.catalog_item?.author}</p>
-                  </div>
-                  {res.status === 'READY' ? (
-                    <Badge variant="success">
-                      Ready · pick up by {formatDate(res.expires_at)}
-                    </Badge>
-                  ) : (
-                    <Badge variant="info">#{res.queue_position} in queue</Badge>
-                  )}
-                  <Button variant="ghost" loading={cancel.isPending} onClick={() => onCancel(res.id)}>
-                    Cancel
-                  </Button>
-                </Card>
+              {liveReservations.map((res) => (
+                <ReservationStatusCard key={res.id} reservation={res} onCancel={onCancel} cancelling={cancel.isPending} />
               ))}
             </div>
           )}

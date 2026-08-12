@@ -60,22 +60,67 @@ export async function promoteQueue(catalogItemId: string): Promise<void> {
 }
 
 class ReservationsService {
+  /**
+   * The single "Borrow" entry point for students - there is no separate
+   * instant-loan path (self-borrow was removed). A copy free right now gets
+   * claimed immediately (status READY, a pickup deadline from
+   * hold_pickup_deadline_days); nothing free means joining the WAITING
+   * queue, same as before. Either way this only becomes a real Loan once a
+   * Librarian confirms pickup - see circulation.service.ts's createLoan,
+   * which already auto-collects a matching READY hold for that copy+user.
+   */
   async create(userId: string, catalogItemId: string) {
     const item = await prisma.catalogItem.findUnique({ where: { id: catalogItemId } });
     if (!item || item.deleted_at) throw new AppError('Catalog item not found', 404);
 
-    if (item.available_copies > 0) {
-      throw new AppError('Copies are available - please borrow instead of reserving', 400);
-    }
-
     const existing = await prisma.reservation.findFirst({
       where: { catalog_item_id: catalogItemId, user_id: userId, status: { in: ['WAITING', 'READY'] } },
     });
-    if (existing) throw new AppError('You already have an active reservation on this title', 400);
+    if (existing) throw new AppError('You already have an active borrow request on this title', 400);
 
     const eligibility = await checkEligibility(userId);
-    if (!eligibility.eligible) throw new AppError(eligibility.reason ?? 'Not eligible to reserve', 422);
+    if (!eligibility.eligible) throw new AppError(eligibility.reason ?? 'Not eligible to borrow', 422);
 
+    const availableCopy = await prisma.copy.findFirst({
+      where: { catalog_item_id: catalogItemId, status: 'AVAILABLE' },
+    });
+
+    if (availableCopy) {
+      const deadlineDays = await settingsService.getNumber('hold_pickup_deadline_days');
+      const now = new Date();
+      const expiresAt = addDays(now, deadlineDays);
+
+      const reservation = await prisma.$transaction(async (tx) => {
+        const created = await tx.reservation.create({
+          data: {
+            catalog_item_id: catalogItemId,
+            user_id: userId,
+            status: 'READY',
+            queue_position: 0,
+            ready_at: now,
+            expires_at: expiresAt,
+          },
+          include: reservationInclude,
+        });
+        await tx.copy.update({ where: { id: availableCopy.id }, data: { status: 'RESERVED' } });
+        await tx.catalogItem.update({ where: { id: catalogItemId }, data: { available_copies: { decrement: 1 } } });
+        return created;
+      });
+
+      await notificationsService.notify({
+        userId,
+        type: 'hold_ready',
+        title: `"${item.title}" is ready for pickup`,
+        body: `Pick it up by ${expiresAt.toDateString()} or the hold expires and passes to the next member in line.`,
+        entityType: 'Reservation',
+        entityId: reservation.id,
+      });
+
+      return reservation;
+    }
+
+    // Nothing free right now - join the queue; promoteQueue() picks up the
+    // front of the line automatically whenever a copy next becomes AVAILABLE.
     const queueLength = await prisma.reservation.count({
       where: { catalog_item_id: catalogItemId, status: 'WAITING' },
     });

@@ -14,7 +14,11 @@ export const reservationsController = {
     const student = requireUser(req);
     const reservation = await reservationsService.create(student.id, req.body.catalog_item_id);
     res.locals.audit = { entityType: 'Reservation', entityId: reservation.id, after: reservation };
-    sendCreated(res, reservation, `Reserved. You are #${reservation.queue_position} in the queue.`);
+    const message =
+      reservation.status === 'READY'
+        ? 'Ready for pickup - a copy has been set aside for you.'
+        : `Requested. You are #${reservation.queue_position} in the queue.`;
+    sendCreated(res, reservation, message);
   },
 
   async list(req: Request, res: Response): Promise<void> {

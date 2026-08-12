@@ -91,10 +91,10 @@ const AdminStaffDetailPage = lazy(() =>
   import('@/admin-portal/pages/staff/StaffDetailPage').then((m) => ({ default: m.StaffDetailPage }))
 );
 
-// minRole for each admin route, read from the same NAV_ITEMS list the
+// Allowed roles for each admin route, read from the same NAV_ITEMS list the
 // Sidebar filters against - one source of truth for "who can see this link"
 // and "who can load this route" so the two can never drift apart.
-const minRoleFor = (key: string): string => NAV_ITEMS.find((item) => item.key === key)!.minRole;
+const rolesFor = (key: string): string[] => NAV_ITEMS.find((item) => item.key === key)!.roles;
 
 function RouteFallback() {
   return (
@@ -196,7 +196,7 @@ export default function App() {
             <Route
               path="catalogue"
               element={
-                <AdminRouteGuard minRole={minRoleFor('catalogue')}>
+                <AdminRouteGuard roles={rolesFor('catalogue')}>
                   <AdminCataloguePage />
                 </AdminRouteGuard>
               }
@@ -204,7 +204,7 @@ export default function App() {
             <Route
               path="catalogue/:id"
               element={
-                <AdminRouteGuard minRole={minRoleFor('catalogue')}>
+                <AdminRouteGuard roles={rolesFor('catalogue')}>
                   <AdminCatalogueDetailPage />
                 </AdminRouteGuard>
               }
@@ -212,7 +212,7 @@ export default function App() {
             <Route
               path="members"
               element={
-                <AdminRouteGuard minRole={minRoleFor('members')}>
+                <AdminRouteGuard roles={rolesFor('members')}>
                   <AdminMembersPage />
                 </AdminRouteGuard>
               }
@@ -220,7 +220,7 @@ export default function App() {
             <Route
               path="members/:id"
               element={
-                <AdminRouteGuard minRole={minRoleFor('members')}>
+                <AdminRouteGuard roles={rolesFor('members')}>
                   <AdminMemberDetailPage />
                 </AdminRouteGuard>
               }
@@ -228,7 +228,7 @@ export default function App() {
             <Route
               path="loans"
               element={
-                <AdminRouteGuard minRole={minRoleFor('loans')}>
+                <AdminRouteGuard roles={rolesFor('loans')}>
                   <AdminLoansPage />
                 </AdminRouteGuard>
               }
@@ -236,7 +236,7 @@ export default function App() {
             <Route
               path="loans/:id"
               element={
-                <AdminRouteGuard minRole={minRoleFor('loans')}>
+                <AdminRouteGuard roles={rolesFor('loans')}>
                   <AdminLoanDetailPage />
                 </AdminRouteGuard>
               }
@@ -244,7 +244,7 @@ export default function App() {
             <Route
               path="circulation"
               element={
-                <AdminRouteGuard minRole={minRoleFor('circulation')}>
+                <AdminRouteGuard roles={rolesFor('circulation')}>
                   <AdminCirculationPage />
                 </AdminRouteGuard>
               }
@@ -252,7 +252,7 @@ export default function App() {
             <Route
               path="overdues"
               element={
-                <AdminRouteGuard minRole={minRoleFor('overdues')}>
+                <AdminRouteGuard roles={rolesFor('overdues')}>
                   <AdminOverduesPage />
                 </AdminRouteGuard>
               }
@@ -260,7 +260,7 @@ export default function App() {
             <Route
               path="overdues/fines/:id"
               element={
-                <AdminRouteGuard minRole={minRoleFor('overdues')}>
+                <AdminRouteGuard roles={rolesFor('overdues')}>
                   <AdminFineDetailPage />
                 </AdminRouteGuard>
               }
@@ -268,7 +268,7 @@ export default function App() {
             <Route
               path="reservations"
               element={
-                <AdminRouteGuard minRole={minRoleFor('reservations')}>
+                <AdminRouteGuard roles={rolesFor('reservations')}>
                   <AdminReservationsPage />
                 </AdminRouteGuard>
               }
@@ -276,7 +276,7 @@ export default function App() {
             <Route
               path="maintenance"
               element={
-                <AdminRouteGuard minRole={minRoleFor('maintenance')}>
+                <AdminRouteGuard roles={rolesFor('maintenance')}>
                   <AdminMaintenancePage />
                 </AdminRouteGuard>
               }
@@ -284,7 +284,7 @@ export default function App() {
             <Route
               path="inventory"
               element={
-                <AdminRouteGuard minRole={minRoleFor('inventory')}>
+                <AdminRouteGuard roles={rolesFor('inventory')}>
                   <AdminInventoryPage />
                 </AdminRouteGuard>
               }
@@ -292,7 +292,7 @@ export default function App() {
             <Route
               path="inventory/:id"
               element={
-                <AdminRouteGuard minRole={minRoleFor('inventory')}>
+                <AdminRouteGuard roles={rolesFor('inventory')}>
                   <AdminInventorySessionDetailPage />
                 </AdminRouteGuard>
               }
@@ -300,7 +300,7 @@ export default function App() {
             <Route
               path="acquisitions"
               element={
-                <AdminRouteGuard minRole={minRoleFor('acquisitions')}>
+                <AdminRouteGuard roles={rolesFor('acquisitions')}>
                   <AdminAcquisitionsPage />
                 </AdminRouteGuard>
               }
@@ -308,7 +308,7 @@ export default function App() {
             <Route
               path="catalog-data"
               element={
-                <AdminRouteGuard minRole={minRoleFor('catalog-data')}>
+                <AdminRouteGuard roles={rolesFor('catalog-data')}>
                   <AdminCatalogDataPage />
                 </AdminRouteGuard>
               }
@@ -316,7 +316,7 @@ export default function App() {
             <Route
               path="reports"
               element={
-                <AdminRouteGuard minRole={minRoleFor('reports')}>
+                <AdminRouteGuard roles={rolesFor('reports')}>
                   <AdminReportsPage />
                 </AdminRouteGuard>
               }
@@ -324,7 +324,7 @@ export default function App() {
             <Route
               path="staff"
               element={
-                <AdminRouteGuard minRole={minRoleFor('staff')}>
+                <AdminRouteGuard roles={rolesFor('staff')}>
                   <AdminStaffPage />
                 </AdminRouteGuard>
               }
@@ -332,7 +332,7 @@ export default function App() {
             <Route
               path="staff/:id"
               element={
-                <AdminRouteGuard minRole={minRoleFor('staff')}>
+                <AdminRouteGuard roles={rolesFor('staff')}>
                   <AdminStaffDetailPage />
                 </AdminRouteGuard>
               }
@@ -340,7 +340,7 @@ export default function App() {
             <Route
               path="settings"
               element={
-                <AdminRouteGuard minRole={minRoleFor('settings')}>
+                <AdminRouteGuard roles={rolesFor('settings')}>
                   <AdminSettingsPage />
                 </AdminRouteGuard>
               }
@@ -348,7 +348,7 @@ export default function App() {
             <Route
               path="audit-log"
               element={
-                <AdminRouteGuard minRole={minRoleFor('audit-log')}>
+                <AdminRouteGuard roles={rolesFor('audit-log')}>
                   <AdminAuditLogPage />
                 </AdminRouteGuard>
               }

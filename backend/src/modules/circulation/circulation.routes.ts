@@ -2,10 +2,10 @@
 import { Router } from 'express';
 import { circulationController } from './circulation.controller';
 import { authenticate } from '../../middleware/auth';
-import { requireAtLeast, requireLibrarianOrOverride, requireOverrideIfAdministrator, requireRole } from '../../middleware/rbac';
+import { requireAtLeast, requireLibrarianOrOverride, requireOverrideIfAdministrator } from '../../middleware/rbac';
 import { validateBody, validateQuery } from '../../middleware/validate';
 import { asyncHandler } from '../../shared/asyncHandler';
-import { issueSchema, loansQuery, renewSchema, returnSchema, selfBorrowSchema } from './dto/circulation.dto';
+import { issueSchema, loansQuery, renewSchema, returnSchema } from './dto/circulation.dto';
 
 const router = Router();
 router.use(authenticate);
@@ -26,24 +26,6 @@ router.use(authenticate);
  *       422: { description: Ineligible or copy unavailable }
  */
 router.post('/issue', requireLibrarianOrOverride(), validateBody(issueSchema), asyncHandler(circulationController.issue));
-
-/**
- * @swagger
- * /circulation/self-borrow:
- *   post:
- *     tags: [Circulation]
- *     summary: Student self-service borrow (STUDENT). Gated by self_service_borrowing_enabled.
- *     description: user_id is taken from the authenticated student; it is never read from the body.
- *     requestBody:
- *       content:
- *         application/json:
- *           schema: { type: object, required: [copy_id], properties: { copy_id: { type: string } } }
- *     responses:
- *       201: { description: Borrowed }
- *       403: { description: Self-service borrowing disabled }
- *       422: { description: Ineligible or copy unavailable }
- */
-router.post('/self-borrow', requireRole('STUDENT'), validateBody(selfBorrowSchema), asyncHandler(circulationController.selfBorrow));
 
 /**
  * @swagger

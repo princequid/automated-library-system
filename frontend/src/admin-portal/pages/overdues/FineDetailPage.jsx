@@ -4,11 +4,15 @@
 // {state:{fine:row}})) rather than a fetch here - if this page is opened
 // directly (a bookmark, a refresh) that state is gone and there's genuinely
 // no way to recover it, so it says so.
+//
+// This page is LIBRARIAN-only (see constants/nav.js) - an ADMINISTRATOR can
+// never reach it, so waive/pay/reject-dispute render unconditionally here.
+// The backend still allows an audited Administrator override via
+// requireLibrarianOrOverride(), but that's an API-only emergency path with
+// deliberately no UI.
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuthStore } from '@/store/auth.store';
-import { rankAtLeast } from '@/lib/roles';
 import { apiErrorMessage } from '@/lib/api';
 import { finesService } from '../../services/finesService';
 import { DetailPageHeader } from '../../components/layout/DetailPageHeader';
@@ -19,7 +23,6 @@ import { ErrorState } from '../../components/common/ErrorState';
 import { RelativeDate } from '../../components/common/RelativeDate';
 import { FinesIcon, InfoIcon, UserIcon } from '../../components/common/Icons';
 import { useToast } from '../../components/common/Toast';
-import { OverrideReasonModal } from '../../components/common/OverrideReasonModal';
 import { WaiveFineModal } from './WaiveFineModal';
 
 function fineStatus(fine) {
@@ -31,41 +34,18 @@ function fineStatus(fine) {
 
 export function FineDetailPage() {
   const fine = useLocation().state?.fine;
-  const { user } = useAuthStore();
-  // waive/pay-manual/resolve-dispute are requireLibrarianOrOverride() on the
-  // backend - both roles reach these, but ADMINISTRATOR must supply an
-  // override_reason.
-  const canWaive = rankAtLeast(user?.role, 'LIBRARIAN');
-  const canRecordPayment = rankAtLeast(user?.role, 'LIBRARIAN');
-  const isAdministrator = user?.role === 'ADMINISTRATOR';
   const [waiving, setWaiving] = useState(false);
-  const [overridingPayment, setOverridingPayment] = useState(false);
-  const [overridingReject, setOverridingReject] = useState(false);
   const queryClient = useQueryClient();
   const toast = useToast();
 
   const payManual = useMutation({
-    mutationFn: (overrideReason) =>
-      finesService.payManual(fine.id, overrideReason ? { override_reason: overrideReason } : undefined),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['fines'] });
-      toast.success('Payment recorded.');
-      setOverridingPayment(false);
-    },
+    mutationFn: () => finesService.payManual(fine.id),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['fines'] }); toast.success('Payment recorded.'); },
     onError: (err) => toast.error(apiErrorMessage(err, 'Could not record this payment.')),
   });
   const rejectDispute = useMutation({
-    mutationFn: (overrideReason) =>
-      finesService.resolveDispute(fine.id, {
-        resolution: 'reject',
-        reason: 'Reviewed - fine stands',
-        ...(overrideReason ? { override_reason: overrideReason } : {}),
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['fines'] });
-      toast.success('Dispute rejected - the fine stands.');
-      setOverridingReject(false);
-    },
+    mutationFn: () => finesService.resolveDispute(fine.id, { resolution: 'reject', reason: 'Reviewed - fine stands' }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['fines'] }); toast.success('Dispute rejected - the fine stands.'); },
     onError: (err) => toast.error(apiErrorMessage(err, 'Could not resolve this dispute.')),
   });
 
@@ -94,25 +74,17 @@ export function FineDetailPage() {
         actions={
           unresolved && (
             <>
-              {fine.disputed && canWaive && (
-                <Button
-                  variant="outline"
-                  onClick={() => (isAdministrator ? setOverridingReject(true) : rejectDispute.mutate())}
-                  loading={rejectDispute.isPending}
-                >
+              {fine.disputed && (
+                <Button variant="outline" onClick={() => rejectDispute.mutate()} loading={rejectDispute.isPending}>
                   Reject dispute
                 </Button>
               )}
-              {!fine.disputed && canRecordPayment && (
-                <Button
-                  variant="outline"
-                  onClick={() => (isAdministrator ? setOverridingPayment(true) : payManual.mutate())}
-                  loading={payManual.isPending}
-                >
+              {!fine.disputed && (
+                <Button variant="outline" onClick={() => payManual.mutate()} loading={payManual.isPending}>
                   Record payment
                 </Button>
               )}
-              {canWaive && <Button onClick={() => setWaiving(true)}>Waive</Button>}
+              <Button onClick={() => setWaiving(true)}>Waive</Button>
             </>
           )
         }
@@ -144,28 +116,7 @@ export function FineDetailPage() {
         <DetailField label="Student ID" value={fine.user.student_id} />
       </DetailSection>
 
-      {canWaive && <WaiveFineModal open={waiving} onClose={() => setWaiving(false)} fine={fine} />}
-
-      {isAdministrator && (
-        <>
-          <OverrideReasonModal
-            open={overridingPayment}
-            onClose={() => setOverridingPayment(false)}
-            title="Record payment"
-            description="This is normally a Librarian action, so the reason is recorded as an override."
-            onConfirm={(reason) => payManual.mutate(reason)}
-            loading={payManual.isPending}
-          />
-          <OverrideReasonModal
-            open={overridingReject}
-            onClose={() => setOverridingReject(false)}
-            title="Reject dispute"
-            description="This is normally a Librarian action, so the reason is recorded as an override."
-            onConfirm={(reason) => rejectDispute.mutate(reason)}
-            loading={rejectDispute.isPending}
-          />
-        </>
-      )}
+      <WaiveFineModal open={waiving} onClose={() => setWaiving(false)} fine={fine} />
     </>
   );
 }

@@ -2,6 +2,9 @@
 const mockPrisma = {
   catalogItem: { findUnique: jest.fn(), findFirst: jest.fn(), create: jest.fn(), update: jest.fn(), findMany: jest.fn(), count: jest.fn() },
   copy: { count: jest.fn(), createMany: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
+  // addCopies calls promoteQueue() after creating copies - findFirst
+  // resolving undefined means "nobody waiting", the no-op path.
+  reservation: { findFirst: jest.fn() },
 };
 jest.mock('../../config/database', () => ({ prisma: mockPrisma }));
 jest.mock('../settings/settings.service', () => ({

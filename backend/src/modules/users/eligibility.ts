@@ -1,11 +1,10 @@
 // backend/src/modules/users/eligibility.ts
 // Borrowing-eligibility rules in one place. Both the Users module (GET
-// /users/:id/eligibility) and the Circulation module (issue / self-borrow) call
-// this so the definition of "eligible" is identical across the whole system.
+// /users/:id/eligibility) and the Circulation module (issue) call this so the
+// definition of "eligible" is identical across the whole system.
 import { prisma } from '../../config/database';
 import { settingsService } from '../settings/settings.service';
 import { AppError } from '../../shared/appError';
-import { resolveMemberLevel } from '../../shared/memberLevel';
 
 export interface EligibilityResult {
   eligible: boolean;
@@ -20,8 +19,7 @@ export async function checkEligibility(userId: string): Promise<EligibilityResul
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new AppError('User not found', 404);
 
-  const level = resolveMemberLevel(user);
-  const loanLimit = await settingsService.getNumber(`loan_limit_${level}`);
+  const loanLimit = await settingsService.getNumber('loan_limit');
 
   const activeLoans = await prisma.loan.count({ where: { user_id: userId, returned_at: null } });
 

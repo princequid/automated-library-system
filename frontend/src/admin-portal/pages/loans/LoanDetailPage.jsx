@@ -4,9 +4,7 @@
 // OverdueLoansCard.jsx's navigate(..., {state:{loan:row}})) rather than a
 // fetch here - if this page is opened directly (a bookmark, a refresh) that
 // state is gone and there's genuinely no way to recover it, so it says so.
-import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useAuthStore } from '@/store/auth.store';
 import { DetailPageHeader } from '../../components/layout/DetailPageHeader';
 import { DetailSection, DetailField } from '../../components/common/DetailSection';
 import { Button } from '../../components/common/Button';
@@ -15,7 +13,6 @@ import { LoanStatusBadge } from '../../components/common/Badge';
 import { RelativeDate } from '../../components/common/RelativeDate';
 import { DueDate } from '../../components/common/DueDate';
 import { LoansIcon, InfoIcon, UserIcon } from '../../components/common/Icons';
-import { OverrideReasonModal } from '../../components/common/OverrideReasonModal';
 import { deriveLoanStatus } from '../../utils/loanStatus';
 import { useLoanActions } from './useLoanActions';
 
@@ -36,9 +33,6 @@ export function LoanDetailPage() {
 
 function LoanDetail({ loan }) {
   const { renew, returnLoan } = useLoanActions(loan);
-  const { user } = useAuthStore();
-  const isAdministrator = user?.role === 'ADMINISTRATOR';
-  const [overriding, setOverriding] = useState(null); // 'renew' | 'return' | null
   const isActive = !loan.returned_at;
   const derivedStatus = deriveLoanStatus(loan);
 
@@ -55,17 +49,10 @@ function LoanDetail({ loan }) {
         actions={
           isActive && (
             <>
-              <Button
-                variant="outline"
-                onClick={() => (isAdministrator ? setOverriding('renew') : renew.mutate())}
-                loading={renew.isPending}
-              >
+              <Button variant="outline" onClick={() => renew.mutate()} loading={renew.isPending}>
                 Renew
               </Button>
-              <Button
-                onClick={() => (isAdministrator ? setOverriding('return') : returnLoan.mutate())}
-                loading={returnLoan.isPending}
-              >
+              <Button onClick={() => returnLoan.mutate()} loading={returnLoan.isPending}>
                 Return
               </Button>
             </>
@@ -87,27 +74,6 @@ function LoanDetail({ loan }) {
         <DetailField label="Email" value={loan.user.email} />
         <DetailField label="Student ID" value={loan.user.student_id} />
       </DetailSection>
-
-      {isAdministrator && (
-        <>
-          <OverrideReasonModal
-            open={overriding === 'renew'}
-            onClose={() => setOverriding(null)}
-            title="Renew loan"
-            description="This is normally a Librarian action, so the reason is recorded as an override."
-            onConfirm={(reason) => renew.mutate(reason, { onSuccess: () => setOverriding(null) })}
-            loading={renew.isPending}
-          />
-          <OverrideReasonModal
-            open={overriding === 'return'}
-            onClose={() => setOverriding(null)}
-            title="Return loan"
-            description="This is normally a Librarian action, so the reason is recorded as an override."
-            onConfirm={(reason) => returnLoan.mutate(reason, { onSuccess: () => setOverriding(null) })}
-            loading={returnLoan.isPending}
-          />
-        </>
-      )}
     </>
   );
 }

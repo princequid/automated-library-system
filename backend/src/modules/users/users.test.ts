@@ -23,8 +23,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockSettings.getNumber.mockImplementation(async (key: string) => {
     const map: Record<string, number> = {
-      loan_limit_undergraduate: 5,
-      loan_limit_postgraduate: 8,
+      loan_limit: 5,
       fine_blocking_threshold_ghs: 10,
     };
     return map[key];
@@ -58,16 +57,6 @@ describe('checkEligibility', () => {
     mockPrisma.fine.aggregate.mockResolvedValue({ _sum: { amount: 0 } });
 
     const result = await checkEligibility('u1');
-    expect(result.eligible).toBe(true);
-  });
-
-  it('uses the postgraduate loan limit for year_of_study >= 5', async () => {
-    mockPrisma.user.findUnique.mockResolvedValue({ id: 'u2', year_of_study: 6 });
-    mockPrisma.loan.count.mockResolvedValue(6);
-    mockPrisma.fine.aggregate.mockResolvedValue({ _sum: { amount: 0 } });
-
-    const result = await checkEligibility('u2');
-    expect(result.loan_limit).toBe(8);
     expect(result.eligible).toBe(true);
   });
 });

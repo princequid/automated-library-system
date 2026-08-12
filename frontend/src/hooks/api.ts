@@ -46,16 +46,6 @@ export const useUserEligibility = (id: string | undefined) =>
   useQuery({ queryKey: ['eligibility', id], queryFn: () => get<Eligibility>(`/users/${id}/eligibility`), enabled: !!id });
 
 // ---- Circulation (mutations) ------------------------------------------------
-export function useSelfBorrow() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (copyId: string) => api.post('/circulation/self-borrow', { copy_id: copyId }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['me'] });
-      qc.invalidateQueries({ queryKey: ['catalog'] });
-    },
-  });
-}
 export function useRenewLoan() {
   const qc = useQueryClient();
   return useMutation({

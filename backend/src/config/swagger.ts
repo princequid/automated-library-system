@@ -46,7 +46,7 @@ const options: swaggerJsdoc.Options = {
       { name: 'Users', description: 'Account management, bulk import, eligibility' },
       { name: 'Settings', description: 'System configuration (fines, loan limits, borrowing rules)' },
       { name: 'Catalog', description: 'Catalog browsing and management, ISBN lookup, copies' },
-      { name: 'Circulation', description: 'Desk issue/return/renew and student self-borrow' },
+      { name: 'Circulation', description: 'Desk issue/return/renew' },
       { name: 'Reservations', description: 'Holds queue and promotion' },
       { name: 'Fines', description: 'Fines, waivers, payments' },
       { name: 'Analytics', description: 'Dashboard metrics and reports' },

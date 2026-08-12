@@ -5,7 +5,7 @@ const mockPrisma: any = {
   loan: { create: jest.fn(), findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
   fine: { create: jest.fn() },
   reservation: { count: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
-  user: { findUnique: jest.fn().mockResolvedValue({ id: 'stu-1', year_of_study: 2, member_level: null }) },
+  user: { findUnique: jest.fn().mockResolvedValue({ id: 'stu-1', year_of_study: 2 }) },
   $transaction: jest.fn(async (cb: (tx: unknown) => Promise<unknown>) =>
     typeof cb === 'function' ? cb(mockPrisma) : Promise.all(cb as never)
   ),
@@ -26,36 +26,16 @@ import { circulationService } from './circulation.service';
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockPrisma.user.findUnique.mockResolvedValue({ id: 'stu-1', year_of_study: 2, member_level: null });
+  mockPrisma.user.findUnique.mockResolvedValue({ id: 'stu-1', year_of_study: 2 });
   mockPrisma.reservation.findFirst.mockResolvedValue(null);
   mockSettings.getNumber.mockImplementation(async (k: string) => {
     const map: Record<string, number> = {
-      loan_period_days_undergraduate: 14,
-      loan_period_days_postgraduate: 30,
-      loan_period_days_lecturer: 60,
-      max_renewals_undergraduate: 2,
-      max_renewals_postgraduate: 2,
-      max_renewals_lecturer: 3,
-      fine_rate_undergraduate: 0.5,
+      loan_period_days: 14,
+      max_renewals: 2,
+      fine_rate: 0.5,
       fine_max_cap_ghs: 20,
     };
     return map[k];
-  });
-});
-
-describe('self-borrow gating', () => {
-  it('is blocked when self_service_borrowing_enabled is false', async () => {
-    mockSettings.getBoolean.mockResolvedValue(false);
-    await expect(circulationService.selfBorrow('copy-1', 'stu-1')).rejects.toMatchObject({ statusCode: 403 });
-  });
-
-  it('proceeds through eligibility when enabled', async () => {
-    mockSettings.getBoolean.mockResolvedValue(true);
-    mockCheckEligibility.mockResolvedValue({ eligible: false, reason: 'Loan limit reached (5/5)' });
-    await expect(circulationService.selfBorrow('copy-1', 'stu-1')).rejects.toMatchObject({
-      statusCode: 422,
-      message: 'Loan limit reached (5/5)',
-    });
   });
 });
 
@@ -104,7 +84,7 @@ describe('renew', () => {
       returned_at: null,
       renewal_count: 2,
       copy: { catalog_item_id: 'c1' },
-      user: { year_of_study: 2, member_level: null },
+      user: { year_of_study: 2 },
     });
     await expect(circulationService.renew('loan-1', { id: 'stu-1', role: 'STUDENT' })).rejects.toMatchObject({
       statusCode: 400,
@@ -118,7 +98,7 @@ describe('renew', () => {
       returned_at: null,
       renewal_count: 0,
       copy: { catalog_item_id: 'c1' },
-      user: { year_of_study: 2, member_level: null },
+      user: { year_of_study: 2 },
     });
     mockPrisma.reservation.count.mockResolvedValue(1);
     await expect(circulationService.renew('loan-1', { id: 'stu-1', role: 'STUDENT' })).rejects.toMatchObject({

@@ -1,6 +1,7 @@
 // frontend/src/pages/student/HomePage.tsx
 // Student home: greeting, three stat cards, an eligibility banner if blocked, a
-// "due soon" list of the most urgent loans, and a search CTA for first-timers.
+// prominent "your requests" section for live reservations, a "due soon" list of
+// the most urgent loans, and a search CTA for first-timers.
 import { Link } from 'react-router-dom';
 import { BookMarked, Clock, CircleDollarSign, Search, AlertTriangle } from 'lucide-react';
 import { PageTransition } from '@/components/ui/page-transition';
@@ -9,10 +10,12 @@ import { SkeletonStat, SkeletonList } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { EmptyState, ErrorState } from '@/components/ui/states';
-import { BookCover, DueBadge } from '@/components/shared';
-import { useMe, useMyLoans, useMyReservations, useMyEligibility } from '@/hooks/api';
+import { BookCover, DueBadge, ReservationStatusCard } from '@/components/shared';
+import { toast } from '@/components/ui/toast';
+import { useMe, useMyLoans, useMyReservations, useMyEligibility, useCancelReservation } from '@/hooks/api';
 import { useAuthStore } from '@/store/auth.store';
 import { greeting, formatGhs } from '@/lib/format';
+import { apiErrorMessage } from '@/lib/api';
 
 export function StudentHomePage() {
   const user = useAuthStore((s) => s.user);
@@ -20,12 +23,29 @@ export function StudentHomePage() {
   const loans = useMyLoans();
   const reservations = useMyReservations();
   const eligibility = useMyEligibility();
+  const cancelReservation = useCancelReservation();
 
   const firstName = user?.name?.split(' ')[0] ?? 'there';
   const activeLoans = (loans.data ?? []).filter((l) => !l.returned_at);
   const dueSoon = [...activeLoans]
     .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
     .slice(0, 3);
+
+  // Live = still needs the student's attention (a pending pickup or queue spot).
+  // COLLECTED has become a Loan and CANCELLED is gone, so both are excluded here.
+  const liveReservations = (reservations.data ?? []).filter(
+    (r) => r.status === 'WAITING' || r.status === 'READY'
+  );
+  const readyCount = liveReservations.filter((r) => r.status === 'READY').length;
+
+  const onCancelReservation = async (id: string) => {
+    try {
+      await cancelReservation.mutateAsync(id);
+      toast.success('Request cancelled');
+    } catch (err) {
+      toast.error('Could not cancel', apiErrorMessage(err));
+    }
+  };
 
   const loading = me.isLoading || loans.isLoading;
   const finesTotal = me.data?.outstandingFineTotal ?? 0;
@@ -52,6 +72,27 @@ export function StudentHomePage() {
         </Card>
       )}
 
+      {/* Your requests - the most time-sensitive thing on this page: a READY
+          reservation has a 24h pickup window, so it gets top billing, not just a
+          number in a stat card. */}
+      {!reservations.isLoading && liveReservations.length > 0 && (
+        <div className="mb-6">
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-medium text-text-primary">
+            {readyCount > 0 ? 'Ready for pickup' : 'Your requests'}
+          </h2>
+          <div className="space-y-2">
+            {liveReservations.map((r) => (
+              <ReservationStatusCard
+                key={r.id}
+                reservation={r}
+                onCancel={onCancelReservation}
+                cancelling={cancelReservation.isPending}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Stat cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {loading ? (
@@ -64,8 +105,8 @@ export function StudentHomePage() {
           <>
             <StatCard label="Active loans" value={activeLoans.length} icon={<BookMarked className="h-4 w-4" />} />
             <StatCard
-              label="Reservations"
-              value={(reservations.data ?? []).length}
+              label="Active requests"
+              value={liveReservations.length}
               icon={<Clock className="h-4 w-4" />}
             />
             <StatCard

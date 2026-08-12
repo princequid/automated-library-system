@@ -7,6 +7,7 @@
 // closing the "no repair lifecycle" gap the checklist audit flagged.
 import { prisma } from '../../config/database';
 import { updateAvailableCopies } from '../catalog/catalog.service';
+import { promoteQueue } from '../reservations/reservations.service';
 import { AppError } from '../../shared/appError';
 import { ListMaintenanceQuery, OpenMaintenanceDto, ResolveMaintenanceDto } from './dto/maintenance.dto';
 
@@ -67,7 +68,13 @@ class MaintenanceService {
       prisma.copy.update({ where: { id: ticket.copy_id }, data: { status: copyStatus } }),
     ]);
     const copy = await prisma.copy.findUnique({ where: { id: ticket.copy_id } });
-    if (copy) await updateAvailableCopies(copy.catalog_item_id);
+    if (copy) {
+      await updateAvailableCopies(copy.catalog_item_id);
+      // A repaired copy going back to AVAILABLE is the same "who gets it
+      // first" question as a newly-added copy - the waiting queue, not
+      // whoever searches next.
+      if (copyStatus === 'AVAILABLE') await promoteQueue(copy.catalog_item_id);
+    }
     return updated;
   }
 }

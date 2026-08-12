@@ -6,7 +6,6 @@ import { differenceInCalendarDays } from 'date-fns';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { settingsService } from '../modules/settings/settings.service';
-import { resolveMemberLevel } from '../shared/memberLevel';
 import { notificationsService } from '../modules/notifications/notifications.service';
 import { logger } from '../config/logger';
 
@@ -26,8 +25,7 @@ export async function runFineCalculation(): Promise<void> {
     const daysOverdue = differenceInCalendarDays(now, loan.due_date) - grace;
     if (daysOverdue <= 0) continue;
 
-    const level = resolveMemberLevel(loan.user);
-    const rate = await settingsService.getNumber(`fine_rate_${level}`);
+    const rate = await settingsService.getNumber('fine_rate');
     const accrued = Math.min(daysOverdue * rate, cap);
 
     // Find the auto-generated overdue fine for this loan (one per loan).

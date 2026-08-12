@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '@/store/auth.store';
 import { loansService } from '../../services/loansService';
 import { useApiList } from '../../hooks/useApiList';
 import { PageHeader } from '../../components/layout/PageHeader';
@@ -13,14 +12,13 @@ import { RowActions } from '../../components/common/RowActions';
 import { LoanStatusBadge } from '../../components/common/Badge';
 import { DueDate } from '../../components/common/DueDate';
 import { RelativeDate } from '../../components/common/RelativeDate';
-import { OverrideReasonModal } from '../../components/common/OverrideReasonModal';
 import { deriveLoanStatus } from '../../utils/loanStatus';
 import { useLoanActions } from './useLoanActions';
 
 const PAGE_SIZE = 20;
 const STATUS_RANK = { OVERDUE: 0, ACTIVE: 1, RETURNED: 2 };
 
-function LoanRowActions({ loan, onView, isAdministrator, onOverride }) {
+function LoanRowActions({ loan, onView }) {
   const { renew, returnLoan } = useLoanActions(loan);
   const isActive = !loan.returned_at;
 
@@ -30,33 +28,11 @@ function LoanRowActions({ loan, onView, isAdministrator, onOverride }) {
       menuItems={
         isActive
           ? [
-              {
-                label: renew.isPending ? 'Renewing…' : 'Renew',
-                onClick: () => (isAdministrator ? onOverride(loan, 'renew') : renew.mutate()),
-              },
-              {
-                label: returnLoan.isPending ? 'Returning…' : 'Return',
-                onClick: () => (isAdministrator ? onOverride(loan, 'return') : returnLoan.mutate()),
-              },
+              { label: renew.isPending ? 'Renewing…' : 'Renew', onClick: () => renew.mutate() },
+              { label: returnLoan.isPending ? 'Returning…' : 'Return', onClick: () => returnLoan.mutate() },
             ]
           : []
       }
-    />
-  );
-}
-
-function LoanOverrideModal({ loan, action, onClose }) {
-  const { renew, returnLoan } = useLoanActions(loan ?? {});
-  const mutation = action === 'renew' ? renew : returnLoan;
-
-  return (
-    <OverrideReasonModal
-      open={!!loan}
-      onClose={onClose}
-      title={action === 'renew' ? 'Renew loan' : 'Return loan'}
-      description="This is normally a Librarian action, so the reason is recorded as an override."
-      onConfirm={(reason) => mutation.mutate(reason, { onSuccess: onClose })}
-      loading={mutation.isPending}
     />
   );
 }
@@ -88,11 +64,8 @@ const COLUMNS = [
 
 export function LoansPage() {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
-  const isAdministrator = user?.role === 'ADMINISTRATOR';
   const [page, setPage] = useState(1);
   const [overdueOnly, setOverdueOnly] = useState(false);
-  const [overriding, setOverriding] = useState(null); // { loan, action } | null
 
   // Only "All" and "Overdue" are real, backend-backed counts (the `overdue`
   // query param is the only filter loansQuery actually supports) - no
@@ -122,19 +95,7 @@ export function LoansPage() {
 
   const columns = [
     ...COLUMNS,
-    {
-      key: 'actions',
-      header: 'Actions',
-      render: (row) => (
-        <LoanRowActions
-          loan={row}
-          onView={() => openLoan(row)}
-          isAdministrator={isAdministrator}
-          onOverride={(loan, action) => setOverriding({ loan, action })}
-        />
-      ),
-      width: '15%',
-    },
+    { key: 'actions', header: 'Actions', render: (row) => <LoanRowActions loan={row} onView={() => openLoan(row)} />, width: '15%' },
   ];
 
   return (
@@ -168,14 +129,6 @@ export function LoansPage() {
           onPageChange={setPage}
         />
       </TableCard>
-
-      {isAdministrator && (
-        <LoanOverrideModal
-          loan={overriding?.loan}
-          action={overriding?.action}
-          onClose={() => setOverriding(null)}
-        />
-      )}
     </>
   );
 }

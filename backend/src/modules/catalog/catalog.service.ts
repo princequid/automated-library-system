@@ -9,6 +9,7 @@ import { settingsService } from '../settings/settings.service';
 import { AppError } from '../../shared/appError';
 import { buildMeta } from '../../shared/responseHelper';
 import { parseCsv } from '../../shared/csv';
+import { promoteQueue } from '../reservations/reservations.service';
 import { AddCopiesDto, CreateCatalogDto, ListCatalogQuery, UpdateCatalogDto, UpdateCopyDto } from './dto/catalog.dto';
 
 /**
@@ -58,11 +59,7 @@ class CatalogService {
         take: query.limit,
       }),
       prisma.catalogItem.count({ where }),
-      // Loan period is per-level now (see src/shared/memberLevel.ts) - the
-      // undergraduate figure stays the headline "N-day loan" display value
-      // shown before a viewer's own level is known, same as the single
-      // number this field always showed before that split existed.
-      settingsService.getNumber('loan_period_days_undergraduate'),
+      settingsService.getNumber('loan_period_days'),
     ]);
 
     // Derived field so the frontend never needs a second call to show "14-day loan".
@@ -76,7 +73,7 @@ class CatalogService {
       include: { copies: { orderBy: { barcode: 'asc' } } },
     });
     if (!item) throw new AppError('Catalog item not found', 404);
-    const loanPeriodDays = await settingsService.getNumber('loan_period_days_undergraduate');
+    const loanPeriodDays = await settingsService.getNumber('loan_period_days');
     return { ...item, loan_period_days: loanPeriodDays };
   }
 
@@ -146,6 +143,15 @@ class CatalogService {
     });
     await prisma.copy.createMany({ data });
     await updateAvailableCopies(catalogItemId);
+
+    // A newly-added copy goes to whoever's been WAITING longest, not to
+    // whoever happens to borrow/search next - otherwise the queue is purely
+    // decorative the moment restock happens. One promotion attempt per copy
+    // added; promoteQueue no-ops once the queue or the new copies run out.
+    for (let i = 0; i < quantity; i += 1) {
+      await promoteQueue(catalogItemId);
+    }
+
     return this.listCopies(catalogItemId);
   }
 
@@ -190,6 +196,12 @@ class CatalogService {
         });
         await prisma.loan.update({ where: { id: activeLoan.id }, data: { returned_at: new Date() } });
       }
+    }
+
+    // A copy manually corrected back to AVAILABLE (e.g. a WITHDRAWN/LOST copy
+    // turns up) goes to whoever's waiting longest, same as a newly-added one.
+    if (dto.status === 'AVAILABLE' && copy.status !== 'AVAILABLE') {
+      await promoteQueue(copy.catalog_item_id);
     }
 
     return updated;
@@ -257,6 +269,9 @@ class CatalogService {
         await prisma.copy.createMany({ data: copyData });
         copiesCreated += quantity;
         await updateAvailableCopies(item.id);
+        for (let n = 0; n < quantity; n += 1) {
+          await promoteQueue(item.id);
+        }
       } catch (err) {
         failed.push({ row: i + 2, reason: (err as Error).message });
       }

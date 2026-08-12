@@ -15,10 +15,10 @@ router.use(authenticate);
  * /reservations:
  *   post:
  *     tags: [Reservations]
- *     summary: Reserve a title when no copies are available (STUDENT, own)
+ *     summary: Borrow a title (STUDENT, own) - the single borrow entry point. READY immediately if a copy is free (pickup deadline applies), otherwise WAITING in queue.
  *     responses:
- *       201: { description: Reserved with a queue position }
- *       400: { description: Copies available, or duplicate reservation }
+ *       201: { description: Created - either READY (pickup deadline set) or WAITING (queued) }
+ *       400: { description: Duplicate active request on this title }
  *       422: { description: Ineligible }
  *   get:
  *     tags: [Reservations]

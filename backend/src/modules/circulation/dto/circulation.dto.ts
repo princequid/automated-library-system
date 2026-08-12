@@ -6,11 +6,6 @@ export const issueSchema = z.object({
   user_id: z.string().min(1),
 });
 
-export const selfBorrowSchema = z.object({
-  copy_id: z.string().min(1),
-  // Deliberately no user_id: a student can only borrow for themselves.
-});
-
 export const returnSchema = z.object({
   barcode: z.string().min(1),
 });
@@ -32,7 +27,6 @@ export const loansQuery = z.object({
 });
 
 export type IssueDto = z.infer<typeof issueSchema>;
-export type SelfBorrowDto = z.infer<typeof selfBorrowSchema>;
 export type ReturnDto = z.infer<typeof returnSchema>;
 export type RenewDto = z.infer<typeof renewSchema>;
 export type LoansQuery = z.infer<typeof loansQuery>;

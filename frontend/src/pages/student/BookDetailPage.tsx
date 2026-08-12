@@ -1,36 +1,34 @@
 // frontend/src/pages/student/BookDetailPage.tsx
-// Book detail + the borrow/reserve action area. The loan period is read from the
-// API field (never hardcoded). Eligibility gates the borrow button and shows the
-// exact backend reason text when blocked.
+// Book detail + the borrow action area. The loan period is read from the
+// API field (never hardcoded). Borrowing is a single unified action: the backend
+// either hands over a copy immediately (READY) or queues the student (WAITING) -
+// there's no separate "reserve" flow anymore.
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { MapPin, ArrowLeft } from 'lucide-react';
-import { PageTransition, DrawnCheck } from '@/components/ui/page-transition';
+import { PageTransition } from '@/components/ui/page-transition';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/ui/states';
-import { AvailabilityBadge, BookCover } from '@/components/shared';
+import { AvailabilityBadge, BookCover, ReservationStatusCard } from '@/components/shared';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/components/ui/toast';
-import {
-  useCatalogItem,
-  useMyEligibility,
-  useSelfBorrow,
-  useCreateReservation,
-} from '@/hooks/api';
+import { useCatalogItem, useCreateReservation, useMyReservations, useCancelReservation } from '@/hooks/api';
 import { apiErrorMessage } from '@/lib/api';
-import { formatDate } from '@/lib/format';
+import { formatDateTime } from '@/lib/format';
+import type { Reservation } from '@/lib/types';
 
 export function BookDetailPage() {
   const { id } = useParams<{ id: string }>();
   const item = useCatalogItem(id);
-  const eligibility = useMyEligibility();
-  const borrow = useSelfBorrow();
+  const reservations = useMyReservations();
   const reserve = useCreateReservation();
+  const cancel = useCancelReservation();
 
-  const [borrowed, setBorrowed] = useState<{ dueDate: string } | null>(null);
-  const [reserved, setReserved] = useState<{ position: number } | null>(null);
+  // Immediate feedback from the mutation response, shown until useMyReservations'
+  // cache-invalidation refetch catches up (avoids a flash of "no active request").
+  const [justCreated, setJustCreated] = useState<Reservation | null>(null);
 
   if (item.isLoading) {
     return (
@@ -55,29 +53,36 @@ export function BookDetailPage() {
   }
 
   const book = item.data;
-  const firstAvailableCopy = book.copies?.find((c) => c.status === 'AVAILABLE');
-  const canBorrow = book.available_copies > 0 && eligibility.data?.eligible;
+
+  // An existing live request for this title, if any - server data wins once it
+  // arrives, falling back to the just-created reservation in the meantime.
+  const fromServer = (reservations.data ?? []).find(
+    (r) => r.catalog_item_id === book.id && (r.status === 'WAITING' || r.status === 'READY')
+  );
+  const existing = fromServer ?? (justCreated?.catalog_item_id === book.id ? justCreated : null);
 
   const onBorrow = async () => {
-    if (!firstAvailableCopy) return;
     try {
-      const res = await borrow.mutateAsync(firstAvailableCopy.id);
-      const dueDate = res.data?.data?.due_date as string;
-      setBorrowed({ dueDate });
-      toast.success('Borrowed', book.title);
+      const res = await reserve.mutateAsync(book.id);
+      const created = res.data?.data as Reservation;
+      setJustCreated(created);
+      if (created.status === 'READY') {
+        toast.success('Ready for pickup', `Pick up by ${formatDateTime(created.expires_at)}.`);
+      } else {
+        toast.success("You're in line", `#${created.queue_position} in line — we'll notify you when it's ready.`);
+      }
     } catch (err) {
       toast.error('Could not borrow', apiErrorMessage(err));
     }
   };
 
-  const onReserve = async () => {
+  const onCancel = async (reservationId: string) => {
     try {
-      const res = await reserve.mutateAsync(book.id);
-      const position = res.data?.data?.queue_position as number;
-      setReserved({ position });
-      toast.success('Reserved', `You are #${position} in the queue.`);
+      await cancel.mutateAsync(reservationId);
+      setJustCreated(null);
+      toast.success('Request cancelled');
     } catch (err) {
-      toast.error('Could not reserve', apiErrorMessage(err));
+      toast.error('Could not cancel', apiErrorMessage(err));
     }
   };
 
@@ -143,51 +148,19 @@ export function BookDetailPage() {
             </Card>
           )}
 
-          {/* Action area */}
+          {/* Action area: a button to borrow, or - if the student already has a
+              live request on this title - its current status instead. */}
           <div className="mt-8">
-            {borrowed ? (
-              <Card className="flex items-center gap-4 border-success-bg bg-success-bg/40 p-5">
-                <DrawnCheck />
-                <div>
-                  <p className="text-sm font-medium text-success-text">Borrowed successfully</p>
-                  <p className="mt-0.5 text-sm text-text-secondary">Due {formatDate(borrowed.dueDate)}</p>
-                  <Button variant="ghost" className="mt-2 px-0" asChild>
-                    <Link to="/student/loans">View my loans</Link>
-                  </Button>
-                </div>
-              </Card>
-            ) : reserved ? (
-              <Card className="border-primary/30 bg-primary-tint/50 p-5">
-                <p className="text-sm font-medium text-primary-hover">Reserved</p>
-                <p className="mt-0.5 text-sm text-text-secondary">
-                  You are #{reserved.position} in the queue. We'll notify you when it's ready.
-                </p>
-              </Card>
-            ) : book.available_copies > 0 ? (
-              canBorrow ? (
-                <Button size="lg" loading={borrow.isPending} onClick={onBorrow}>
-                  Borrow now
-                </Button>
-              ) : (
-                <div>
-                  <Button size="lg" disabled>
-                    Borrow now
-                  </Button>
-                  {eligibility.data?.reason && (
-                    <p className="mt-2 text-sm text-error-text">
-                      {eligibility.data.reason}{' '}
-                      {eligibility.data.reason.toLowerCase().includes('fine') && (
-                        <Link to="/student/account" className="font-medium underline">
-                          Go to account
-                        </Link>
-                      )}
-                    </p>
-                  )}
-                </div>
-              )
+            {existing ? (
+              <ReservationStatusCard
+                reservation={existing}
+                onCancel={onCancel}
+                cancelling={cancel.isPending}
+                showCover={false}
+              />
             ) : (
-              <Button size="lg" variant="secondary" loading={reserve.isPending} onClick={onReserve}>
-                Reserve
+              <Button size="lg" variant="primary" loading={reserve.isPending} onClick={onBorrow}>
+                Borrow
               </Button>
             )}
           </div>
