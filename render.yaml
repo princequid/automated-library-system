@@ -1,0 +1,81 @@
+# render.yaml
+# Render Blueprint - deploys the whole ALMS stack from this one repo: the
+# Express backend, managed Postgres, managed Redis, and the static frontend.
+# In the Render dashboard: New > Blueprint > select this repo > Apply.
+#
+# Service names below (alms-backend / alms-frontend) determine their default
+# *.onrender.com URLs, which is what CORS_ORIGIN and VITE_API_BASE_URL point
+# at below. If you rename a service (or Render assigns a different name due
+# to a collision), update the other service's matching env var to match.
+databases:
+  - name: alms-db
+    plan: free
+    databaseName: alms
+    user: alms
+
+services:
+  - type: redis
+    name: alms-redis
+    plan: free
+    ipAllowList: []
+
+  - type: web
+    name: alms-backend
+    env: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    # prisma migrate deploy applies any pending migrations (safe, additive -
+    # never a `db push --force-reset`) before the server starts on every
+    # deploy and every restart.
+    startCommand: npx prisma migrate deploy && npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: alms-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: alms-redis
+          property: connectionString
+      # Render generates a real random value for each of these on first
+      # deploy - never the insecure dev-fallback strings from env.ts.
+      - key: JWT_SECRET
+        generateValue: true
+      - key: REFRESH_TOKEN_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: https://alms-frontend.onrender.com
+      # Optional - leave unset in the Render dashboard to skip real email
+      # delivery (the app logs emails to the console instead; nothing else
+      # changes). Set all five to enable real SMTP delivery.
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        value: "Library <no-reply@university.edu>"
+
+  - type: web
+    name: alms-frontend
+    env: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://alms-backend.onrender.com/api/v1
+    # Client-side routing (React Router) needs every path rewritten to
+    # index.html, or refreshing on e.g. /admin/members 404s.
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
