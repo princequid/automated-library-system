@@ -28,8 +28,12 @@ const SETTINGS: { key: string; value: string; type: string; description: string 
 
 const STAFF = [
   { name: 'System Administrator', email: 'admin@university.edu', role: 'ADMINISTRATOR' as const, password: 'Admin@1234' },
+  { name: 'Deputy Administrator', email: 'deputy.admin@university.edu', role: 'ADMINISTRATOR' as const, password: 'Deputy@1234' },
   { name: 'Head Librarian', email: 'librarian@university.edu', role: 'LIBRARIAN' as const, password: 'Library@123' },
   { name: 'Front Desk Librarian', email: 'desk@university.edu', role: 'LIBRARIAN' as const, password: 'Desk@1234' },
+  { name: 'Circulation Librarian', email: 'circulation@university.edu', role: 'LIBRARIAN' as const, password: 'Circulate@123' },
+  { name: 'Cataloguing Librarian', email: 'catalog@university.edu', role: 'LIBRARIAN' as const, password: 'Catalog@123' },
+  { name: 'Acquisitions Librarian', email: 'acquisitions@university.edu', role: 'LIBRARIAN' as const, password: 'Acquire@123' },
 ];
 
 const STUDENTS: {
@@ -45,6 +49,20 @@ const STUDENTS: {
   { name: 'Yaw Darko', email: 'yaw.darko@st.university.edu', student_id: '20210048', department: 'Mechanical Engineering', year_of_study: 1 },
   { name: 'Adjoa Asante', email: 'adjoa.asante@st.university.edu', student_id: '20210049', department: 'Computer Science', year_of_study: 4 },
   { name: 'Kwame Nkrumah', email: 'kwame.nkrumah@st.university.edu', student_id: '20210050', department: 'Computer Science', year_of_study: 3 },
+  { name: 'Abena Osei', email: 'abena.osei@st.university.edu', student_id: '20210051', department: 'Computer Science', year_of_study: 1 },
+  { name: 'Kojo Appiah', email: 'kojo.appiah@st.university.edu', student_id: '20210052', department: 'Electrical Engineering', year_of_study: 2 },
+  { name: 'Akosua Frimpong', email: 'akosua.frimpong@st.university.edu', student_id: '20210053', department: 'Computer Science', year_of_study: 3 },
+  { name: 'Kwabena Antwi', email: 'kwabena.antwi@st.university.edu', student_id: '20210054', department: 'Mechanical Engineering', year_of_study: 2 },
+  { name: 'Adwoa Sarpong', email: 'adwoa.sarpong@st.university.edu', student_id: '20210055', department: 'Computer Science', year_of_study: 4 },
+  { name: 'Yaa Boateng', email: 'yaa.boateng@st.university.edu', student_id: '20210056', department: 'Electrical Engineering', year_of_study: 1 },
+  { name: 'Kwesi Amponsah', email: 'kwesi.amponsah@st.university.edu', student_id: '20210057', department: 'Computer Science', year_of_study: 2 },
+  { name: 'Abenaa Ofori', email: 'abenaa.ofori@st.university.edu', student_id: '20210058', department: 'Mechanical Engineering', year_of_study: 3 },
+  { name: 'Kwaku Mensah', email: 'kwaku.mensah@st.university.edu', student_id: '20210059', department: 'Electrical Engineering', year_of_study: 4 },
+  { name: 'Afia Danso', email: 'afia.danso@st.university.edu', student_id: '20210060', department: 'Computer Science', year_of_study: 1 },
+  { name: 'Kwame Owusu', email: 'kwame.owusu@st.university.edu', student_id: '20210061', department: 'Mechanical Engineering', year_of_study: 2 },
+  { name: 'Akua Asamoah', email: 'akua.asamoah@st.university.edu', student_id: '20210062', department: 'Computer Science', year_of_study: 5 },
+  { name: 'Kojo Yeboah', email: 'kojo.yeboah@st.university.edu', student_id: '20210063', department: 'Electrical Engineering', year_of_study: 3 },
+  { name: 'Ama Agyeman', email: 'ama.agyeman@st.university.edu', student_id: '20210064', department: 'Computer Science', year_of_study: 2 },
 ];
 
 const BOOKS = [
