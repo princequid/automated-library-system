@@ -33,7 +33,15 @@ services:
     # prisma migrate deploy applies any pending migrations (safe, additive -
     # never a `db push --force-reset`) before the server starts on every
     # deploy and every restart.
-    startCommand: npx prisma migrate deploy && npm start
+    #
+    # TEMPORARY: `npm run db:seed` is folded in here as a one-time way to
+    # seed the free-tier database, since Shell/SSH access requires a paid
+    # plan and this sandbox can't reach the DB directly. `|| true` keeps a
+    # seed failure from blocking startup. REVERT this back to just
+    # `npx prisma migrate deploy && npm start` right after the first
+    # successful deploy - db:seed wipes all tables on every run, so leaving
+    # this in place would reset real data on every future restart.
+    startCommand: npx prisma migrate deploy && (npm run db:seed || true) && npm start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
