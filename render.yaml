@@ -3,10 +3,12 @@
 # Express backend, managed Postgres, managed Redis, and the static frontend.
 # In the Render dashboard: New > Blueprint > select this repo > Apply.
 #
-# Service names below (alms-backend / alms-frontend) determine their default
-# *.onrender.com URLs, which is what CORS_ORIGIN and VITE_API_BASE_URL point
-# at below. If you rename a service (or Render assigns a different name due
-# to a collision), update the other service's matching env var to match.
+# CORS_ORIGIN (on alms-backend) and VITE_API_BASE_URL (on alms-frontend) are
+# hardcoded to this deployment's actual assigned URLs - Render appended a
+# random suffix to both service names on creation (alms-backend-pf9h,
+# alms-frontend-o4o7) rather than using the plain names below, so these two
+# values do NOT match the `name:` fields. If either service is ever recreated
+# and gets a different URL, update both of these to match the new one.
 databases:
   - name: alms-db
     plan: free
@@ -62,7 +64,7 @@ services:
       - key: REFRESH_TOKEN_SECRET
         generateValue: true
       - key: CORS_ORIGIN
-        value: https://alms-frontend.onrender.com
+        value: https://alms-frontend-o4o7.onrender.com
       # Optional - leave unset in the Render dashboard to skip real email
       # delivery (the app logs emails to the console instead; nothing else
       # changes). Set all five to enable real SMTP delivery.
@@ -85,7 +87,7 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://alms-backend.onrender.com/api/v1
+        value: https://alms-backend-pf9h.onrender.com/api/v1
     # Client-side routing (React Router) needs every path rewritten to
     # index.html, or refreshing on e.g. /admin/members 404s.
     routes:
