@@ -9,6 +9,7 @@ import axios from 'axios';
 import { useAuthStore, isAdminRole } from '@/store/auth.store';
 import { RouteGuard } from '@/components/RouteGuard';
 import { BrandLoader } from '@/components/Brand';
+import { PageLoader } from '@/components/PageLoader';
 import { LoginPage } from '@/pages/auth/LoginPage';
 import { StudentLayout } from '@/layouts/StudentLayout';
 import { AdminRouteGuard } from '@/admin-portal/components/layout/AdminRouteGuard';
@@ -97,11 +98,7 @@ const AdminStaffDetailPage = lazy(() =>
 const rolesFor = (key: string): string[] => NAV_ITEMS.find((item) => item.key === key)!.roles;
 
 function RouteFallback() {
-  return (
-    <div className="flex min-h-[50vh] items-center justify-center">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
-    </div>
-  );
+  return <PageLoader size="screen" />;
 }
 
 const baseURL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';

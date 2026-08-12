@@ -1,7 +1,7 @@
 // src/admin-portal/components/charts/BorrowingByDeptChart.jsx
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-export function BorrowingByDeptChart({ data, colors, textColor }) {
+export function BorrowingByDeptChart({ data, colors, textColor, radius = '12px' }) {
   return (
     <ResponsiveContainer width="100%" height={240}>
       <PieChart>
@@ -15,7 +15,7 @@ export function BorrowingByDeptChart({ data, colors, textColor }) {
             <Cell key={row.department} fill={colors[i % colors.length]} aria-label={`${row.department}: ${row.count}`} />
           ))}
         </Pie>
-        <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(value, name) => [value, name]} />
+        <Tooltip contentStyle={{ fontSize: 12, borderRadius: radius }} formatter={(value, name) => [value, name]} />
         <Legend wrapperStyle={{ fontSize: 12, color: textColor }} />
       </PieChart>
     </ResponsiveContainer>

@@ -1,13 +1,14 @@
 // frontend/src/layouts/StudentLayout.tsx
-// Light top-bar shell for students. The active tab gets a sage underline that
-// slides between tabs (Framer Motion layoutId) on route change. Collapses to a
-// hamburger menu under 768px.
-import { useState } from 'react';
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Home, Search, BookMarked, User, Menu, X, LogOut, Bell } from 'lucide-react';
-import { Wordmark } from '@/components/Brand';
-import { Avatar } from '@/components/ui/avatar';
+// Fixed left-sidebar shell for students (see StudentSidebar.tsx), mirroring
+// the admin-portal's AppShell/Sidebar/Navbar shape. A slim top strip above
+// the page content carries the greeting (moved up here from HomePage.tsx so
+// it appears on every page, not just Home) and the notification bell.
+import { Suspense, useState } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
+import { motion, useReducedMotion } from 'framer-motion';
+import { Menu, Bell } from 'lucide-react';
+import { StudentSidebar } from '@/components/StudentSidebar';
+import { PageLoader } from '@/components/PageLoader';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -17,8 +18,8 @@ import {
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import { useAuthStore } from '@/store/auth.store';
-import { useLogout } from '@/hooks/useAuth';
 import { useMyNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from '@/hooks/api';
+import { greeting } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 function NotificationBell() {
@@ -70,116 +71,51 @@ function NotificationBell() {
   );
 }
 
-const NAV = [
-  { to: '/student', label: 'Home', icon: Home, end: true },
-  { to: '/student/search', label: 'Search', icon: Search, end: false },
-  { to: '/student/loans', label: 'My loans', icon: BookMarked, end: false },
-  { to: '/student/account', label: 'Account', icon: User, end: false },
-];
-
 export function StudentLayout() {
   const user = useAuthStore((s) => s.user);
-  const logout = useLogout();
-  const navigate = useNavigate();
   const location = useLocation();
+  const reduceMotion = useReducedMotion();
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  const onSignOut = async () => {
-    await logout.mutateAsync();
-    navigate('/login', { replace: true });
-  };
-
-  const isActive = (to: string, end: boolean) =>
-    end ? location.pathname === to : location.pathname.startsWith(to);
+  const firstName = user?.name?.split(' ')[0] ?? 'there';
 
   return (
-    <div className="min-h-screen bg-bg">
-      <header className="sticky top-0 z-30 border-b border-border bg-card/80 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-[1100px] items-center justify-between px-4">
-          <Wordmark />
+    <div className="flex min-h-screen bg-bg">
+      <StudentSidebar mobileOpen={mobileOpen} onCloseMobile={() => setMobileOpen(false)} />
 
-          {/* Desktop nav */}
-          <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
-            {NAV.map((item) => {
-              const active = isActive(item.to, item.end);
-              return (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.end}
-                  className={cn(
-                    'relative px-3.5 py-2 text-sm font-medium transition-colors',
-                    active ? 'text-primary' : 'text-text-secondary hover:text-text-primary'
-                  )}
-                >
-                  {item.label}
-                  {active && (
-                    <motion.span
-                      layoutId="student-underline"
-                      className="absolute inset-x-3 -bottom-[9px] h-0.5 rounded-full bg-primary"
-                      transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-                    />
-                  )}
-                </NavLink>
-              );
-            })}
-          </nav>
-
-          <div className="flex items-center gap-2">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-4 border-b border-border bg-card px-4 md:px-6">
+          <button
+            type="button"
+            className="rounded-control p-2 text-text-secondary hover:bg-bg md:hidden"
+            onClick={() => setMobileOpen(true)}
+            aria-label="Open navigation"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <span className="truncate font-serif text-base italic text-text-primary">
+            {greeting()}, {firstName}
+          </span>
+          <div className="ml-auto flex items-center gap-2">
             <NotificationBell />
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-2 rounded-full p-0.5 hover:bg-bg">
-                <Avatar name={user?.name ?? 'U'} />
-                <span className="hidden text-sm text-text-primary sm:inline">{user?.name}</span>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>{user?.email}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/student/account')}>
-                  <User className="h-4 w-4" /> Account
-                </DropdownMenuItem>
-                <DropdownMenuItem destructive onClick={onSignOut}>
-                  <LogOut className="h-4 w-4" /> Sign out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <button
-              className="rounded-control p-2 text-text-secondary hover:bg-bg md:hidden"
-              onClick={() => setMobileOpen((o) => !o)}
-              aria-label="Toggle menu"
-            >
-              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
           </div>
-        </div>
+        </header>
 
-        {/* Mobile nav */}
-        {mobileOpen && (
-          <nav className="border-t border-border bg-card px-4 py-2 md:hidden" aria-label="Mobile">
-            {NAV.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                onClick={() => setMobileOpen(false)}
-                className={({ isActive: a }) =>
-                  cn(
-                    'flex items-center gap-3 rounded-control px-3 py-2.5 text-sm font-medium',
-                    a ? 'bg-primary-tint text-primary-hover' : 'text-text-secondary'
-                  )
-                }
-              >
-                <item.icon className="h-4 w-4" /> {item.label}
-              </NavLink>
-            ))}
-          </nav>
-        )}
-      </header>
-
-      <main className="mx-auto max-w-[1100px] px-4 py-8">
-        <Outlet />
-      </main>
+        <main className="mx-auto w-full max-w-[1100px] flex-1 px-4 py-8 md:px-8">
+          <Suspense fallback={<PageLoader size="section" />}>
+            {/* Keyed by pathname so each new page replays this fade-in on
+                mount, rather than the swap from the loader (or from the
+                previous page) landing as an instant pop-in. */}
+            <motion.div
+              key={location.pathname}
+              initial={reduceMotion ? undefined : { opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.28, ease: 'easeOut' }}
+            >
+              <Outlet />
+            </motion.div>
+          </Suspense>
+        </main>
+      </div>
     </div>
   );
 }

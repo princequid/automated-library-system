@@ -4,6 +4,7 @@ import { useAuthStore, isAdminRole } from '@/store/auth.store';
 import { useLogout } from '@/hooks/useAuth';
 import { NAV_ITEMS } from '../../constants/nav';
 import { LogoutIcon, CloseIcon } from '../common/Icons';
+import { Avatar } from '../common/Avatar';
 
 // Grouped by each item's resolved section (in first-seen order) rather than
 // one flat list - a Librarian and an Administrator looking at the sidebar
@@ -75,9 +76,7 @@ export function Sidebar({ mobileOpen, onCloseMobile }) {
 
         <div className="sidebar-footer">
           <div className="sidebar-user">
-            <span className="sidebar-user-avatar" aria-hidden="true">
-              {user?.name?.charAt(0)?.toUpperCase() ?? '?'}
-            </span>
+            <Avatar name={user?.name} />
             <div className="sidebar-user-info">
               <span className="sidebar-user-name">{user?.name}</span>
               <span className="sidebar-user-role">{isAdminRole(user?.role) ? user?.role : ''}</span>

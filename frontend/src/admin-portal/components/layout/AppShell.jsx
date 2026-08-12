@@ -2,17 +2,21 @@
 // The scoping root: applies the `.admin-portal` class (see tokens.css) and
 // the resolved `data-theme` attribute HERE, never on <html>, so dark mode and
 // the token layer can never leak into the Tailwind-based student portal.
-import { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Suspense, useState } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
+import { motion, useReducedMotion } from 'framer-motion';
 import '../../styles/index.css';
 import { ThemeProvider, useTheme } from '../../context/ThemeContext';
 import { OverlayRootProvider } from '../../context/OverlayRootContext';
 import { ToastProvider } from '../common/Toast';
+import { PageLoader } from '@/components/PageLoader';
 import { Sidebar } from './Sidebar';
 import { Navbar } from './Navbar';
 
 function AppShellInner() {
   const { resolvedTheme } = useTheme();
+  const location = useLocation();
+  const reduceMotion = useReducedMotion();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   // Captured via ref callback, not document.getElementById: this node is
   // rendered below, so a lookup made during ToastProvider's own render (an
@@ -30,7 +34,19 @@ function AppShellInner() {
             <div className="admin-shell-main">
               <Navbar onOpenMobileNav={() => setMobileNavOpen(true)} />
               <main className="admin-shell-content">
-                <Outlet />
+                <Suspense fallback={<PageLoader size="section" />}>
+                  {/* Keyed by pathname so each new page replays this fade-in
+                      on mount, rather than the swap from the loader (or from
+                      the previous page) landing as an instant pop-in. */}
+                  <motion.div
+                    key={location.pathname}
+                    initial={reduceMotion ? undefined : { opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.28, ease: 'easeOut' }}
+                  >
+                    <Outlet />
+                  </motion.div>
+                </Suspense>
               </main>
             </div>
           </div>

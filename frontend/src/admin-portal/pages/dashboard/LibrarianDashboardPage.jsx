@@ -9,10 +9,8 @@
 import { lazy, Suspense } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiErrorMessage } from '@/lib/api';
-import { useAuthStore } from '@/store/auth.store';
 import { reportsService } from '../../services/reportsService';
 import { useCssVars } from '../../hooks/useCssVars';
-import { greetingLine } from '../../utils/greeting';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { TableCard } from '../../components/common/TableCard';
 import { KpiCard } from '../../components/common/KpiCard';
@@ -43,7 +41,7 @@ const BorrowingByDeptChart = lazy(() =>
   import('../../components/charts/BorrowingByDeptChart').then((m) => ({ default: m.BorrowingByDeptChart }))
 );
 
-const CHART_VARS = ['--color-primary', '--color-danger-text', '--color-border', '--color-text-3', '--color-teal-text', '--color-info-text', '--color-warning-text', '--color-success-text', '--color-white'];
+const CHART_VARS = ['--color-primary', '--color-danger-text', '--color-border', '--color-text-3', '--color-teal-text', '--color-info-text', '--color-warning-text', '--color-success-text', '--color-purple-text', '--color-white', '--radius-md'];
 
 const QUICK_ACTIONS = [
   { label: 'Issue book', to: '/admin/circulation', icon: CirculationIcon },
@@ -69,7 +67,6 @@ function ChartCard({ title, query, children }) {
 
 export function LibrarianDashboardPage() {
   const vars = useCssVars(CHART_VARS);
-  const { user } = useAuthStore();
 
   const statsQuery = useQuery({
     queryKey: ['analytics', 'dashboard-stats'],
@@ -95,16 +92,21 @@ export function LibrarianDashboardPage() {
   });
 
   const stats = statsQuery.data?.data;
-  const deptColors = [vars['--color-primary'], vars['--color-teal-text'], vars['--color-info-text'], vars['--color-warning-text'], vars['--color-success-text']];
+  const deptColors = [
+    vars['--color-primary'],
+    vars['--color-teal-text'],
+    vars['--color-info-text'],
+    vars['--color-warning-text'],
+    vars['--color-success-text'],
+    vars['--color-purple-text'],
+  ];
   const overdueSparkline = overdueRateQuery.data?.data?.slice(-10).map((d) => d.overdue);
 
   return (
     <>
-      <PageHeader
-        title="Today's Library Operations"
-        description={greetingLine(user?.name)}
-        actions={<LiveBadge seconds={LIVE_REFRESH_MS / 1000} />}
-      />
+      {/* Greeting now lives in the persistent Navbar strip (see Navbar.jsx),
+          not here - it used to be dashboard-only, now it's on every page. */}
+      <PageHeader title="Today's Library Operations" actions={<LiveBadge seconds={LIVE_REFRESH_MS / 1000} />} />
 
       <QuickActions items={QUICK_ACTIONS} />
 
@@ -169,7 +171,12 @@ export function LibrarianDashboardPage() {
 
       <div className="dashboard-chart-grid">
         <ChartCard title="Borrowing by department" query={deptQuery}>
-          <BorrowingByDeptChart data={deptQuery.data?.data ?? []} colors={deptColors} textColor={vars['--color-text-3']} />
+          <BorrowingByDeptChart
+            data={deptQuery.data?.data ?? []}
+            colors={deptColors}
+            textColor={vars['--color-text-3']}
+            radius={vars['--radius-md']}
+          />
         </ChartCard>
 
         <TableCard title="Top borrowed titles">

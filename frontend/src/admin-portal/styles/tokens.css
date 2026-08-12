@@ -25,9 +25,9 @@
    directly - only the Semantic layer below does.
    =================================================================== */
 :root {
-  /* Sage green - the library's existing brand, carried forward from the
-     previous admin build. 500/600/700 are the exact hex values already
-     WCAG-AA-verified there; this just extends the ramp around them. */
+  /* Sage green - the library's original brand. Kept (not deleted) since the
+     status ramp below still leans on green for "success", but --color-primary
+     no longer points here - see the blue ramp below for the new brand color. */
   --green-50: #f3faf6;
   --green-100: #e6f4ec;
   --green-200: #c8e6d4;
@@ -39,62 +39,105 @@
   --green-800: #163d2b;
   --green-900: #102e20;
 
-  /* Warm gold - the premium accent. Sparingly: active-rail highlight, a
-     rank-1 marker. Never for status - status has its own ramps below. */
+  /* Oxblood - the brand primary ("Reading Room" identity: a working
+     university library, not a SaaS dashboard). 500 is the ink itself; 600/700
+     are the fill/hover a WHITE button label sits on (>10:1, well past AA). */
+  --oxblood-50: #f7e9e9;
+  --oxblood-100: #f0d5d5;
+  --oxblood-200: #dfb0b0;
+  --oxblood-300: #c78888;
+  --oxblood-400: #a35a5a;
+  --oxblood-500: #7c2e2e;
+  --oxblood-600: #692626;
+  --oxblood-700: #551e1e;
+  --oxblood-800: #3f1717;
+  --oxblood-900: #2c0f0f;
+
+  /* Deep navy - the sidebar's fixed surface, invariant across light/dark
+     page themes (see the Layer 2 sidebar tokens below, defined once and
+     deliberately never remapped in the dark block). */
+  --navy-950: #0a0e2e;
+  --navy-900: #0f1642;
+  --navy-800: #171f52;
+
+  /* Brass - the decorative accent: KPI icon chips, quick-action icons, the
+     sidebar's active-item rule. Sparing by design - one accent, not a
+     pastel-per-metric rotation. -600 is tuned for an icon/border stroke
+     against a light card; -700 is dark enough to also stand as small TEXT
+     where that's ever needed (an icon alone only needs 3:1, but keeping a
+     text-safe step here means nothing has to reach for a raw hex later). */
+  --gold-100: #f7ecc9;
   --gold-300: #f3d688;
   --gold-400: #e8bd52;
   --gold-500: #d9a52c;
   --gold-600: #b8871c;
+  --gold-700: #7a5c14;
 
-  /* Neutral ramp - both themes are built from the same ramp, remapped in
-     Layer 2, so light/dark share one perceptual scale instead of two
-     independently-tuned greys that drift apart over time. */
-  --neutral-0: #ffffff;
-  --neutral-50: #f7fafc;
-  --neutral-100: #eef2f6;
-  --neutral-200: #e2e8f0;
-  --neutral-300: #cbd5e1;
-  --neutral-400: #94a3b8;
-  --neutral-500: #64748b;
-  --neutral-600: #475569;
-  --neutral-700: #334155;
-  --neutral-800: #1e293b;
-  --neutral-900: #0f172a;
-  --neutral-950: #0a0f1a;
+  /* Neutral ramp - warm ink/parchment, not cool slate. Both themes are built
+     from this one ramp, remapped in Layer 2, so light/dark share one
+     perceptual (and hue) scale instead of two that drift apart over time. */
+  --neutral-0: #fffdf8;
+  --neutral-50: #f4efe1;
+  --neutral-100: #ece3cd;
+  --neutral-200: #ddd0ab;
+  --neutral-300: #c7b78c;
+  --neutral-400: #a89572;
+  --neutral-500: #7d6f52;
+  --neutral-600: #5c5039;
+  --neutral-700: #443a29;
+  --neutral-800: #2e2618;
+  --neutral-900: #201a10;
+  --neutral-950: #150f08;
 
   /* Status ramps - each ships solid / soft / border / text so a badge or
      banner never needs a one-off rgba(). The "-text" variant is tuned to sit
      ON the soft background or a white card as small text; the solid is tuned
      to sit UNDER white as a fill (e.g. a KPI icon chip). These are different
-     colours on purpose - see the semantic layer's paired tokens below. */
-  --success-500: #2f9e5c;
-  --success-soft: #e6f4ec;
-  --success-border: #a8d9bc;
-  --success-text: #1c6b3f;
+     colours on purpose - see the semantic layer's paired tokens below.
+     Retuned to sit in the warm ink/parchment family rather than the cool
+     saturated set they started as, and each kept visibly distinct from the
+     oxblood brand primary above (danger is a brighter, more saturated red,
+     not a duplicate of the brand ink). */
+  --success-500: #3f7d4a;
+  --success-soft: #e6efe4;
+  --success-border: #b9d1b4;
+  --success-text: #2c5d33;
 
-  --warning-500: #d97a1f;
-  --warning-soft: #fdf0e0;
-  --warning-border: #f3c78e;
-  --warning-text: #9c5514;
+  --warning-500: #b8791f;
+  --warning-soft: #f7ecd9;
+  --warning-border: #e3c48c;
+  --warning-text: #7a4f10;
 
-  --danger-500: #d64545;
-  --danger-soft: #fbe9e9;
-  --danger-border: #efb0b0;
-  --danger-text: #a82f2f;
+  --danger-500: #b0393a;
+  --danger-soft: #f6dede;
+  --danger-border: #e0a8a8;
+  --danger-text: #8a2b2b;
 
-  --info-500: #2f7fd6;
-  --info-soft: #e8f1fc;
-  --info-border: #a9cdf0;
-  --info-text: #1f5a99;
+  --info-500: #3d6e8c;
+  --info-soft: #dfeaf0;
+  --info-border: #a9c7d6;
+  --info-text: #2c5570;
 
-  --teal-500: #2ba69c;
-  --teal-soft: #e2f5f3;
-  --teal-border: #9edcd5;
-  --teal-text: #1c7a72;
+  --teal-500: #2f7d6e;
+  --teal-soft: #e0f0ec;
+  --teal-border: #a9d4c8;
+  --teal-text: #21594e;
 
-  /* Type */
-  --font-display: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
-  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Purple - kept as a status/badge hue only; no longer a KPI-badge accent
+     (KpiCard's icon chip is monochrome brass now, see components.css). */
+  --purple-500: #7d5aa6;
+  --purple-soft: #ede6f2;
+  --purple-border: #cbb3dd;
+  --purple-text: #5c3f7d;
+
+  /* Type - Constantia/Candara, Microsoft's ClearType pairing (a warm
+     humanist serif and its matching sans), not a generic Georgia+Inter
+     combination. Serif carries headings/greeting/KPI figures - the
+     "reading room" register; sans carries dense UI (tables, forms, buttons)
+     where a book face would slow scanning down. Both ship natively on
+     Windows; the fallback chain degrades gracefully elsewhere. */
+  --font-display: Constantia, 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --font-sans: Candara, 'Segoe UI', Optima, system-ui, -apple-system, sans-serif;
 }
 
 /* ===================================================================
@@ -102,26 +145,33 @@
    the one block at the bottom of this section.
    =================================================================== */
 .admin-portal {
-  /* Brand */
-  --color-primary: var(--green-500);
-  --color-primary-hover: var(--green-600);
-  --color-primary-pressed: var(--green-700);
-  --color-primary-soft: var(--green-100);
-  --color-primary-border: var(--green-200);
-  --color-accent-gold: var(--gold-500);
+  /* Brand - oxblood ink ("Reading Room" identity; was accent blue). */
+  --color-primary: var(--oxblood-500);
+  --color-primary-hover: var(--oxblood-600);
+  --color-primary-pressed: var(--oxblood-700);
+  --color-primary-soft: var(--oxblood-100);
+  --color-primary-border: var(--oxblood-200);
+
+  /* Brass - the decorative accent (KPI icon chips, quick-action icons, the
+     sidebar's active-item rule). Distinct from --color-primary on purpose:
+     primary is the ink university documents are signed in, brass is the
+     trim on the shelf. -text is the darker, text-safe step (small labels
+     rendered in brass, not just icon strokes). */
+  --color-accent-gold: var(--gold-600);
+  --color-accent-gold-text: var(--gold-700);
 
   /* Solid button fills - deliberately reference PRIMITIVES, not the
      --color-primary/-success/-warning/-danger semantic tokens, and are
      absent from the dark-mode block below on purpose so they never change.
-     --color-primary is dark-mode-brightened (green-500 -> green-400) so it
-     reads as an accent against a near-black page; that same brightened
-     value under WHITE button text measured ~2.4:1 - a real failure this
-     token layer is designed to prevent (see TRAP 1/2 elsewhere in this
-     file). The -text primitives (tuned as small text ON a light card) also
-     happen to be exactly the dark, saturated shade a solid fill needs
-     UNDER white - same numbers, opposite job. */
-  --btn-fill-primary: var(--green-600);
-  --btn-fill-primary-hover: var(--green-700);
+     --color-primary is dark-mode-brightened (oxblood-500 -> oxblood-300) so
+     it reads as an accent against a near-black page; that same brightened
+     value under WHITE button text would fail the same way green-400 did - a
+     real failure this token layer is designed to prevent (see TRAP 1/2
+     elsewhere in this file). The -text primitives (tuned as small text ON a
+     light card) also happen to be exactly the dark, saturated shade a solid
+     fill needs UNDER white - same numbers, opposite job. */
+  --btn-fill-primary: var(--oxblood-600);
+  --btn-fill-primary-hover: var(--oxblood-700);
   --btn-fill-success: var(--success-text);
   --btn-fill-warning: var(--warning-text);
   --btn-fill-danger: var(--danger-text);
@@ -130,16 +180,18 @@
   --color-bg: var(--neutral-50);
   --color-white: var(--neutral-0); /* SURFACE token - card/panel face. Not a text colour; see the trap below. */
   --color-surface-hover: var(--neutral-100);
-  --color-surface-selected: var(--green-100);
+  --color-surface-selected: var(--oxblood-100);
 
-  /* Sidebar - an always-dark surface in both themes, with its own tokens
-     rather than inheriting page surfaces (which invert between themes and
-     would flip the sidebar to white in light mode otherwise). */
-  --sidebar-bg: var(--neutral-900);
-  --sidebar-hover: var(--neutral-800);
+  /* Sidebar - a fixed deep-navy surface in BOTH themes (reference design:
+     the sidebar never inverts to white in light mode, unlike page cards).
+     Defined ONCE here, deliberately absent from the dark-mode block below -
+     same invariant-across-themes pattern as --btn-fill-primary/
+     --color-on-brand elsewhere in this file, not redundant duplication. */
+  --sidebar-bg: var(--navy-900);
+  --sidebar-hover: var(--navy-800);
   --sidebar-text: var(--neutral-300);
   --sidebar-text-active: var(--neutral-0);
-  --sidebar-border: var(--neutral-800);
+  --sidebar-border: var(--navy-950);
 
   /* Text */
   --color-text-1: var(--neutral-900); /* primary */
@@ -161,7 +213,7 @@
   /* Border */
   --color-border: var(--neutral-200);
   --color-border-strong: var(--neutral-300);
-  --color-focus-ring: var(--green-500);
+  --color-focus-ring: var(--oxblood-500);
 
   /* Status - solid/soft/border reused straight from Layer 1; -text below is
      the semantic name components actually reach for. */
@@ -195,6 +247,13 @@
      Same split applies to success/warning/danger/info above: the "-text"
      token, never the solid, for anything you read. */
 
+  --color-purple: var(--purple-500);
+  --color-purple-soft: var(--purple-soft);
+  --color-purple-border: var(--purple-border);
+  --color-purple-text: var(--purple-text);
+  /* Same TRAP 2 split as teal above - --color-purple is a fill for a dot/chip
+     background, --color-purple-text is the one safe to render as text. */
+
   /* Elevation - two-part (broad ambient + tight contact) so cards sit ON the
      page rather than float in a blur. */
   --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
@@ -202,7 +261,7 @@
   --shadow-md: 0 2px 4px rgba(15, 23, 42, 0.04), 0 8px 16px -4px rgba(15, 23, 42, 0.08);
   --shadow-lg: 0 4px 8px rgba(15, 23, 42, 0.04), 0 16px 32px -8px rgba(15, 23, 42, 0.12);
   --shadow-xl: 0 8px 16px rgba(15, 23, 42, 0.06), 0 24px 48px -12px rgba(15, 23, 42, 0.16);
-  --shadow-focus: 0 0 0 3px var(--green-100);
+  --shadow-focus: 0 0 0 3px var(--oxblood-100);
   /* Fed into DataTable's scroll-shadow gradient (components.css) - a plain
      rgba() sibling to the shadow scale above, not reused from it, since the
      scroll-shadow trick needs one bare color rather than a multi-stop shadow. */
@@ -210,22 +269,21 @@
 }
 
 .admin-portal[data-theme='dark'] {
-  --color-primary: var(--green-400); /* the deep navy-equivalent green is too dim on a near-black page */
-  --color-primary-hover: var(--green-300);
-  --color-primary-pressed: var(--green-200);
-  --color-primary-soft: rgba(43, 122, 83, 0.18);
-  --color-primary-border: rgba(43, 122, 83, 0.4);
+  --color-primary: var(--oxblood-300); /* oxblood-500 reads muddy/too dim on a near-black page */
+  --color-primary-hover: var(--oxblood-200);
+  --color-primary-pressed: var(--oxblood-100);
+  --color-primary-soft: rgba(124, 46, 46, 0.22);
+  --color-primary-border: rgba(124, 46, 46, 0.45);
+  --color-accent-gold: var(--gold-400); /* brighter brass pops against ink instead of the light-mode step */
+  --color-accent-gold-text: var(--gold-300);
 
   --color-bg: var(--neutral-950);
-  --color-white: #151f1a; /* card face - deliberately close to admin-portal_4's #151f33, green-tinted to match this brand */
-  --color-surface-hover: #1c2921;
-  --color-surface-selected: rgba(43, 122, 83, 0.22);
+  --color-white: #1e1810; /* card face - warm ink, one step up from --neutral-950, matching this brand instead of the old blue-tinted near-black */
+  --color-surface-hover: #291f13;
+  --color-surface-selected: rgba(124, 46, 46, 0.26);
 
-  --sidebar-bg: #0c1410;
-  --sidebar-hover: #16211a;
-  --sidebar-text: var(--neutral-400);
-  --sidebar-text-active: var(--neutral-0);
-  --sidebar-border: #1c2921;
+  /* --sidebar-* intentionally NOT remapped here - fixed navy in both themes,
+     defined once above. See that block's comment. */
 
   --color-text-1: var(--neutral-50);
   --color-text-2: var(--neutral-400);
@@ -238,15 +296,16 @@
   --color-text-disabled: var(--neutral-700);
   /* --color-on-brand intentionally NOT remapped here - see TRAP 1 above. */
 
-  --color-border: #223026;
-  --color-border-strong: #2c3d31;
-  --color-focus-ring: var(--green-400);
+  --color-border: #362b1c;
+  --color-border-strong: #453723;
+  --color-focus-ring: var(--oxblood-300);
 
-  --color-success-text: #7ad9a0;
-  --color-warning-text: #f0b366;
-  --color-danger-text: #f0a0a0;
-  --color-info-text: #8cbdf0;
-  --color-teal-text: #7fd4c9;
+  --color-success-text: #8fc79a;
+  --color-warning-text: #e8b169;
+  --color-danger-text: #e39494;
+  --color-info-text: #8fb8d0;
+  --color-teal-text: #8fcabf;
+  --color-purple-text: #bfa3d9;
 
   /* The -soft/-border pair for each status ALSO needs remapping here, same
      as --color-primary-soft above - without this they silently fall through
@@ -255,23 +314,25 @@
      light-on-light: a badge measured ~1.2:1 in dark mode before this block
      existed. Each is its -500 primitive at low alpha, composited over the
      dark card face, mirroring the primary token's own pattern exactly. */
-  --color-success-soft: rgba(47, 158, 92, 0.18);
-  --color-success-border: rgba(47, 158, 92, 0.4);
-  --color-warning-soft: rgba(217, 122, 31, 0.18);
-  --color-warning-border: rgba(217, 122, 31, 0.4);
-  --color-danger-soft: rgba(214, 69, 69, 0.18);
-  --color-danger-border: rgba(214, 69, 69, 0.4);
-  --color-info-soft: rgba(47, 127, 214, 0.18);
-  --color-info-border: rgba(47, 127, 214, 0.4);
-  --color-teal-soft: rgba(43, 166, 156, 0.18);
-  --color-teal-border: rgba(43, 166, 156, 0.4);
+  --color-success-soft: rgba(63, 125, 74, 0.2);
+  --color-success-border: rgba(63, 125, 74, 0.45);
+  --color-warning-soft: rgba(184, 121, 31, 0.2);
+  --color-warning-border: rgba(184, 121, 31, 0.45);
+  --color-danger-soft: rgba(176, 57, 58, 0.2);
+  --color-danger-border: rgba(176, 57, 58, 0.45);
+  --color-info-soft: rgba(61, 110, 140, 0.2);
+  --color-info-border: rgba(61, 110, 140, 0.45);
+  --color-teal-soft: rgba(47, 125, 110, 0.2);
+  --color-teal-border: rgba(47, 125, 110, 0.45);
+  --color-purple-soft: rgba(125, 90, 166, 0.2);
+  --color-purple-border: rgba(125, 90, 166, 0.45);
 
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.24);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.24), 0 1px 3px rgba(0, 0, 0, 0.32);
   --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.24), 0 8px 16px -4px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.28), 0 16px 32px -8px rgba(0, 0, 0, 0.48);
   --shadow-xl: 0 8px 16px rgba(0, 0, 0, 0.32), 0 24px 48px -12px rgba(0, 0, 0, 0.56);
-  --shadow-focus: 0 0 0 3px rgba(111, 184, 140, 0.28);
+  --shadow-focus: 0 0 0 3px rgba(199, 136, 136, 0.28);
   --scroll-shadow-color: rgba(0, 0, 0, 0.45);
 }
 
@@ -308,9 +369,9 @@
   --space-12: 3rem;
   --space-16: 4rem;
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 6px;
   --radius-full: 999px;
 
   --transition-fast: 140ms;

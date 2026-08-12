@@ -69,6 +69,7 @@
   padding: 0 var(--space-3) var(--space-1);
 }
 .admin-portal .sidebar-link {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -81,17 +82,23 @@
   transition: background var(--transition-fast) var(--ease-out), color var(--transition-fast) var(--ease-out);
 }
 .admin-portal .sidebar-link:hover { background: var(--sidebar-hover); color: var(--sidebar-text-active); }
-.admin-portal .sidebar-link-active { background: var(--sidebar-hover); color: var(--sidebar-text-active); position: relative; }
+/* A brass index-tab rule on the left edge, not a filled pill - the active
+   item reads as a marked entry in a ledger, matching the rest of the
+   "Reading Room" identity (see the KPI card icon chips in components.css). */
+.admin-portal .sidebar-link-active,
+.admin-portal .sidebar-link-active:hover {
+  background: var(--sidebar-hover);
+  color: var(--sidebar-text-active);
+}
 .admin-portal .sidebar-link-active::before {
   content: '';
   position: absolute;
-  left: -0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
+  left: -1px;
+  top: 0.4rem;
+  bottom: 0.4rem;
   width: 3px;
-  height: 60%;
-  border-radius: var(--radius-full);
-  background: var(--color-accent-gold);
+  border-radius: 2px;
+  background: var(--gold-500);
 }
 
 .admin-portal .sidebar-footer {
@@ -102,19 +109,6 @@
   gap: var(--space-2);
 }
 .admin-portal .sidebar-user { display: flex; align-items: center; gap: var(--space-3); min-width: 0; flex: 1; }
-.admin-portal .sidebar-user-avatar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  background: var(--btn-fill-primary); /* same white-text-on-fill contrast concern as .btn-primary - see tokens.css */
-  color: var(--color-on-brand);
-  font-weight: 600;
-  font-size: var(--text-sm);
-  flex-shrink: 0;
-}
 .admin-portal .sidebar-user-info { display: flex; flex-direction: column; min-width: 0; }
 .admin-portal .sidebar-user-name {
   color: var(--sidebar-text-active);
@@ -168,6 +162,22 @@
   margin-left: calc(var(--space-2) * -1);
 }
 .admin-portal .navbar-actions { margin-left: auto; display: flex; align-items: center; gap: var(--space-3); }
+
+/* Greeting + breadcrumb subtitle, persistent on every page (reference design's
+   "Welcome back, [Name]" top strip) - breadcrumbs demoted to a smaller
+   sub-line underneath rather than their own row. */
+.admin-portal .navbar-greeting { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.admin-portal .navbar-greeting-text {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-style: italic;
+  font-size: var(--text-md);
+  color: var(--color-text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.admin-portal .navbar-greeting .breadcrumbs ol { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: var(--tracking-caps); }
 
 .admin-portal .theme-toggle {
   display: inline-flex;
@@ -288,7 +298,21 @@
   gap: var(--space-4);
   flex-wrap: wrap;
 }
-.admin-portal .page-header-title { font-size: var(--text-2xl); }
+.admin-portal .page-header-title {
+  font-size: var(--text-2xl);
+  font-weight: 400;
+  position: relative;
+  padding-bottom: var(--space-3);
+}
+.admin-portal .page-header-title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 46px;
+  height: 2px;
+  background: var(--gold-500);
+}
 .admin-portal .page-header-description { font-size: var(--text-sm); color: var(--color-text-2); margin: var(--space-1) 0 0; }
 .admin-portal .page-header-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
 
@@ -338,7 +362,7 @@
   font-weight: 600;
   transition: border-color 0.15s ease, transform 0.15s ease;
 }
-.admin-portal .quick-action-card:hover { border-color: var(--color-primary); transform: translateY(-1px); }
+.admin-portal .quick-action-card:hover { border-color: var(--color-accent-gold); transform: translateY(-1px); }
 .admin-portal .quick-action-icon {
   display: flex;
   align-items: center;
@@ -346,8 +370,9 @@
   width: 32px;
   height: 32px;
   border-radius: var(--radius-sm);
-  background: var(--color-primary-soft);
-  color: var(--color-primary-hover);
+  background: transparent;
+  border: 1.5px solid var(--color-accent-gold);
+  color: var(--color-accent-gold);
   flex-shrink: 0;
 }
 

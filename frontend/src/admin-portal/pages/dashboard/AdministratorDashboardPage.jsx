@@ -6,12 +6,10 @@
 // surfaces override usage - the thing only Administrator needs to watch.
 import { useQuery } from '@tanstack/react-query';
 import { apiErrorMessage } from '@/lib/api';
-import { useAuthStore } from '@/store/auth.store';
 import { reportsService } from '../../services/reportsService';
 import { usersService } from '../../services/usersService';
 import { catalogService } from '../../services/catalogService';
 import { finesService } from '../../services/finesService';
-import { greetingLine } from '../../utils/greeting';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { TableCard } from '../../components/common/TableCard';
 import { KpiCard } from '../../components/common/KpiCard';
@@ -41,8 +39,6 @@ const QUICK_ACTIONS = [
 ];
 
 export function AdministratorDashboardPage() {
-  const { user } = useAuthStore();
-
   const studentsQuery = useQuery({
     queryKey: ['users', 'count', 'STUDENT'],
     queryFn: () => usersService.list({ role: 'STUDENT', limit: 1 }),
@@ -75,7 +71,8 @@ export function AdministratorDashboardPage() {
 
   return (
     <>
-      <PageHeader title="System &amp; Library Oversight" description={greetingLine(user?.name)} />
+      {/* Greeting now lives in the persistent Navbar strip (see Navbar.jsx). */}
+      <PageHeader title="System &amp; Library Oversight" />
 
       <QuickActions items={QUICK_ACTIONS} />
 
@@ -90,14 +87,14 @@ export function AdministratorDashboardPage() {
         <KpiCard
           label="Total librarians"
           value={librariansQuery.data?.meta?.total}
-          accent="teal"
+          accent="purple"
           icon={StaffIcon}
           description="Operational staff"
         />
         <KpiCard
           label="Total titles"
           value={titlesQuery.data?.meta?.total}
-          accent="info"
+          accent="teal"
           icon={CatalogueIcon}
           description="Catalogued titles"
         />

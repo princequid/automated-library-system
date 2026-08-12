@@ -42,7 +42,10 @@ const config: Config = {
         sidebar: {
           DEFAULT: 'var(--color-sidebar-bg)',
           hover: 'var(--color-sidebar-hover)',
-          active: 'var(--color-primary-tint)',
+          active: 'var(--color-primary)', // solid pill fill, not a tint - see StudentSidebar.tsx
+          border: 'var(--color-sidebar-border)',
+          text: 'var(--color-sidebar-text)',
+          'text-active': 'var(--color-sidebar-text-active)',
         },
         'hover-surface': 'var(--color-hover-surface)',
         'selected-surface': 'var(--color-selected-surface)',
@@ -75,11 +78,12 @@ const config: Config = {
         info: { DEFAULT: 'var(--color-info)', bg: 'var(--color-info-bg)', text: 'var(--color-info-text)', border: 'var(--color-info-border)' },
       },
       borderRadius: {
-        card: '12px',
-        control: '8px',
+        card: '6px',
+        control: '4px',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+        sans: ['Candara', 'Segoe UI', 'Optima', 'system-ui', '-apple-system', 'sans-serif'],
+        serif: ['Constantia', 'Iowan Old Style', 'Palatino Linotype', 'Georgia', 'serif'],
       },
       fontWeight: {
         normal: '400',

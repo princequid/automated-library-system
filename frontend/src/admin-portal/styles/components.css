@@ -163,21 +163,34 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+/* Monochrome brass, bordered rather than filled - one restrained accent
+   across every KPI on a dashboard instead of a pastel-per-metric rotation.
+   Only a genuinely bad-news figure (accent="warning"/"danger" - outstanding
+   fines, an overdue count) breaks from brass into its own status colour, so
+   the one card that needs attention is the one that visually stands out. */
 .admin-portal .kpi-card-icon-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 2rem;
   height: 2rem;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--color-accent-gold);
+  color: var(--color-accent-gold);
+  background: transparent;
   flex-shrink: 0;
 }
-.admin-portal .kpi-card-icon-badge-primary { background: var(--color-primary-soft); color: var(--color-primary-hover); }
-.admin-portal .kpi-card-icon-badge-success { background: var(--color-success-soft); color: var(--color-success-text); }
-.admin-portal .kpi-card-icon-badge-warning { background: var(--color-warning-soft); color: var(--color-warning-text); }
-.admin-portal .kpi-card-icon-badge-danger { background: var(--color-danger-soft); color: var(--color-danger-text); }
-.admin-portal .kpi-card-icon-badge-info { background: var(--color-info-soft); color: var(--color-info-text); }
-.admin-portal .kpi-card-icon-badge-teal { background: var(--color-teal-soft); color: var(--color-teal-text); }
+.admin-portal .kpi-card-icon-badge-primary,
+.admin-portal .kpi-card-icon-badge-success,
+.admin-portal .kpi-card-icon-badge-info,
+.admin-portal .kpi-card-icon-badge-teal,
+.admin-portal .kpi-card-icon-badge-purple {
+  background: transparent;
+  border-color: var(--color-accent-gold);
+  color: var(--color-accent-gold);
+}
+.admin-portal .kpi-card-icon-badge-warning { background: transparent; border-color: var(--color-warning-text); color: var(--color-warning-text); }
+.admin-portal .kpi-card-icon-badge-danger { background: transparent; border-color: var(--color-danger-text); color: var(--color-danger-text); }
 
 .admin-portal .kpi-value {
   font-family: var(--font-display);
@@ -186,8 +199,12 @@
   color: var(--color-text-1);
   letter-spacing: var(--tracking-tight);
   line-height: 1.1;
+  /* Ledger line - a hairline rule under the figure, like an underscored
+     total in an account book, rather than just floating in the card. */
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
 }
-.admin-portal .kpi-value-empty { font-size: var(--text-lg); color: var(--color-text-3); font-weight: 500; }
+.admin-portal .kpi-value-empty { font-size: var(--text-lg); color: var(--color-text-3); font-weight: 500; border-bottom: none; padding-bottom: 0; }
 .admin-portal .kpi-unit { font-size: var(--text-md); font-weight: 500; color: var(--color-text-2); margin-left: var(--space-1); }
 
 .admin-portal .kpi-card-meta { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
@@ -204,7 +221,7 @@
 .admin-portal .kpi-card-trend-pill-positive { background: var(--color-success-soft); color: var(--color-success-text); }
 .admin-portal .kpi-card-trend-pill-negative { background: var(--color-danger-soft); color: var(--color-danger-text); }
 .admin-portal .kpi-card-trend-pill-neutral { background: var(--color-surface-hover); color: var(--color-text-2); }
-.admin-portal .kpi-card-description { font-size: var(--text-xs); color: var(--color-text-2); }
+.admin-portal .kpi-card-description { font-family: var(--font-display); font-style: italic; font-size: var(--text-xs); color: var(--color-text-2); }
 
 /* margin-top: auto anchors the strip to the card's bottom edge regardless of
    how much (or little) content sits above it, so every sparkline in a KPI
@@ -1027,3 +1044,18 @@
 .admin-portal .due-date-today { color: var(--color-warning-text); font-weight: 600; }
 .admin-portal .due-date-soon { color: var(--color-warning-text); }
 .admin-portal .due-date-ok { color: var(--color-text-2); }
+
+/* ============================== Avatar ============================== */
+/* Shared by Sidebar's footer and Navbar's top-bar strip - see Avatar.jsx. */
+.admin-portal .avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--btn-fill-primary); /* same white-text-on-fill contrast concern as .btn-primary - see tokens.css */
+  color: var(--color-on-brand);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.admin-portal .avatar-sm { width: 1.75rem; height: 1.75rem; font-size: var(--text-xs); }
+.admin-portal .avatar-md { width: 2rem; height: 2rem; font-size: var(--text-sm); }

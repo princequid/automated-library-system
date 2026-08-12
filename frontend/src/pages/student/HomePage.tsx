@@ -13,19 +13,16 @@ import { EmptyState, ErrorState } from '@/components/ui/states';
 import { BookCover, DueBadge, ReservationStatusCard } from '@/components/shared';
 import { toast } from '@/components/ui/toast';
 import { useMe, useMyLoans, useMyReservations, useMyEligibility, useCancelReservation } from '@/hooks/api';
-import { useAuthStore } from '@/store/auth.store';
-import { greeting, formatGhs } from '@/lib/format';
+import { formatGhs } from '@/lib/format';
 import { apiErrorMessage } from '@/lib/api';
 
 export function StudentHomePage() {
-  const user = useAuthStore((s) => s.user);
   const me = useMe();
   const loans = useMyLoans();
   const reservations = useMyReservations();
   const eligibility = useMyEligibility();
   const cancelReservation = useCancelReservation();
 
-  const firstName = user?.name?.split(' ')[0] ?? 'there';
   const activeLoans = (loans.data ?? []).filter((l) => !l.returned_at);
   const dueSoon = [...activeLoans]
     .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
@@ -52,12 +49,9 @@ export function StudentHomePage() {
 
   return (
     <PageTransition>
-      <div className="mb-6">
-        <h1 className="text-2xl font-medium text-text-primary">
-          {greeting()}, {firstName}
-        </h1>
-        <p className="mt-1 text-sm text-text-secondary">Here's what's happening with your library account.</p>
-      </div>
+      {/* The greeting itself now lives in the persistent top strip (see
+          StudentLayout.tsx) - it used to be repeated here as an <h1>. */}
+      <p className="mb-6 text-sm text-text-secondary">Here's what's happening with your library account.</p>
 
       {/* Eligibility banner */}
       {eligibility.data && !eligibility.data.eligible && (
